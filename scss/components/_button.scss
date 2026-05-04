@@ -1,0 +1,29 @@
+@use "../base/variables" as *;
+
+.ver-todo {
+  text-align: center;
+  margin-top: 20px;
+
+  a {
+    display: inline-block;
+    padding: 12px 24px;
+    border: 1px solid #111;
+    text-decoration: none;
+    color: #fff;
+    font-weight: 600;
+    transition: 0.2s;
+    background: #111
+  }
+
+  a:hover {
+    background: #fff;
+    color: #111;
+  }
+}
+.btn-filtros {
+  border: 1px solid #111;
+  background: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+}

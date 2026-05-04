@@ -1,0 +1,21 @@
+@use "variables" as *;
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: #ffffff;
+  color: #111;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+h1, h2, h3 {
+  margin: 0;
+}
+
+section {
+  padding: 60px 20px;
+}
+
+a {
+  color: inherit;
+}

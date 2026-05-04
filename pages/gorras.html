@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gorras | KOVEN</title>
+  <meta name="description" content="Gorras KOVEN para completar outfits urbanos. Revisá colores y modelos disponibles, y comprá por WhatsApp.">
+  <meta name="theme-color" content="#050505">
+  <meta property="og:title" content="Gorras | KOVEN">
+  <meta property="og:description" content="Gorras urbanas KOVEN. Elegí tu modelo y finalizá el pedido por WhatsApp.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="../assets/img/hero-koven-men.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <header class="header">
+    <button class="menu-toggle" onclick="toggleMenu()" aria-label="Abrir menú">☰</button>
+    <a href="../index.html" class="logo">
+      <img src="../assets/img/logo-koven-white.svg" alt="Koven">
+    </a>
+    <div class="menu-derecha">
+      <nav class="nav">
+        <a href="../index.html">Inicio</a>
+        <a href="remeras.html">Remeras</a>
+        <a href="abrigos.html">Abrigos</a>
+        <a href="pantalones.html">Pantalones</a>
+        <a href="gorras.html" class="activo">Gorras</a>
+        <a href="medias.html">Medias</a>
+        <a href="accesorios.html">Accesorios</a>
+      </nav>
+      <div class="acciones">
+        <a href="carrito.html" class="carrito-icono" aria-label="Ver carrito">
+          <img src="../assets/img/cart.svg" alt="">
+          <span id="contador-carrito" class="contador">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="catalogo">
+    <div class="catalogo-header">
+      <div>
+        <span>Catálogo</span>
+        <h1>Gorras</h1>
+      </div>
+      <button class="btn-filtros" onclick="toggleFiltros()">Filtrar</button>
+    </div>
+
+    <div class="catalogo-body">
+      <aside class="filters" id="filtros"></aside>
+      <section class="productos-grid" id="productos"></section>
+    </div>
+  </main>
+
+  <div class="filtros-overlay" onclick="cerrarFiltros()"></div>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <img src="../assets/img/logo-koven-white.svg" alt="Koven">
+      <p>Indumentaria urbana. Compra simple por WhatsApp.</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://www.instagram.com/koven.indumentaria/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://wa.me/5493517557401" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+    <div class="footer-info">
+      <span>Envíos y retiros a coordinar</span>
+      <span>Cambios sujetos a disponibilidad</span>
+    </div>
+  </footer>
+
+  <script>
+    const categoria = "gorras";
+    const categoriaTitulo = "Tipo";
+  </script>
+  <script src="../js/menu.js"></script>
+  <script src="../js/carrito-utils.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    actualizarContador();
+  </script>
+</body>
+
+</html>

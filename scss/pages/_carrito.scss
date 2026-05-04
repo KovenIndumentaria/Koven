@@ -1,0 +1,96 @@
+.carrito-container {
+  max-width: 1000px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.carrito-container h1 {
+  margin-bottom: 30px;
+}
+
+/* LISTA */
+
+.carrito-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* CARD PRODUCTO */
+
+.item-carrito {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px 16px;
+
+  background: #fff;
+}
+
+/* INFO */
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.item-info img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.item-info h4 {
+  margin: 0;
+}
+
+.item-info p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+/* CONTROLES */
+
+.item-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-acciones button {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* RESUMEN */
+
+.carrito-resumen {
+  margin-top: 30px;
+  text-align: right;
+}
+
+.btn-comprar {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.btn-vaciar {
+  background: none;
+  border: none;
+  color: #888;
+  margin-left: 10px;
+  cursor: pointer;
+}
+

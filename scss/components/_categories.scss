@@ -1,0 +1,24 @@
+@use "../base/variables" as *;
+
+.categorias {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+
+  a {
+    padding: 18px 26px;
+    border: 1px solid #111; // 🔥 cambio clave
+    border-radius: $radius;
+    text-decoration: none;
+    color: #111; // 🔥 cambio clave
+    font-weight: 600;
+    transition: .25s;
+
+    &:hover {
+      background: #111; // 🔥 cambio clave
+      color: #fff;      // 🔥 cambio clave
+      transform: translateY(-2px);
+    }
+  }
+}

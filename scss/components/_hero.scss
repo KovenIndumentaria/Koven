@@ -1,0 +1,60 @@
+@use "../base/variables" as *;
+
+@use "../base/variables" as *;
+
+.hero {
+  height: 55vh;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+
+  background: url('../assets/img/hero.jpg') center/cover no-repeat;
+  color: white;
+}
+
+/* overlay oscuro */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+
+  h1 {
+    font-weight: 600;
+    font-size: 64px;
+    letter-spacing: 8px;
+  }
+
+  p {
+    margin: 15px 0 25px;
+    color: $muted;
+    font-size: 16px;
+  }
+
+  .btn {
+    padding: 14px 28px;
+    background: white;
+    color: black;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 6px;
+    transition: 0.25s;
+
+    &:hover {
+      background: #ddd;
+    }
+  }
+}
+
+.hero-logo {
+  width: 220px;
+  margin-bottom: 20px;
+}

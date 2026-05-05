@@ -11,21 +11,48 @@ let talleSeleccionado = "";
 let colorSeleccionado = "";
 let colorHexSeleccionado = "";
 let cantidadSeleccionada = 1;
+const contenedorDetalle = document.getElementById("detalle");
+
+mostrarEstadoProducto("Cargando producto", "Estamos preparando la información y el stock disponible.");
 
 fetch(URL)
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("No se pudo cargar el producto");
+    return res.json();
+  })
   .then(data => {
     const prod = data.find(p => p.id == id);
 
-    if (!prod) return;
+    if (!prod) {
+      actualizarSeoProducto({
+        nombre: "Producto no encontrado",
+        descripcion: "Este producto KOVEN no está disponible o el enlace cambió."
+      });
+
+      mostrarEstadoProducto(
+        "Producto no encontrado",
+        "Es posible que el producto ya no esté disponible o que el enlace haya cambiado.",
+        "Volver al catálogo",
+        "catalogo.html"
+      );
+      return;
+    }
 
     productoActual = prod;
 
     const colores = obtenerColores(prod);
-    const contenedor = document.getElementById("detalle");
     const disponible = prod.estado?.toLowerCase() === "disponible";
     const talles = obtenerTalles(prod);
     const imagenes = prod.imagenes ? prod.imagenes.split(",") : [];
+    const imagenPrincipal = imagenes[0]?.trim() || "";
+    const categoriaProducto = obtenerCategoriaNormalizada(prod);
+    const linkCategoria = `${categoriaProducto}.html`;
+
+    actualizarSeoProducto({
+      nombre: prod.nombre,
+      descripcion: prod.descripcion || "Producto KOVEN. Elegí color y talle disponible, agregalo al carrito y finalizá por WhatsApp.",
+      imagen: imagenPrincipal
+    });
 
     imagenesGlobal = imagenes;
     coloresGlobal = colores;
@@ -40,17 +67,35 @@ fetch(URL)
       talleSeleccionado = talles[0];
     }
 
-    if (imagenes.length === 0) return;
+    if (imagenes.length === 0) {
+      mostrarEstadoProducto(
+        "Producto sin imágenes",
+        "Este producto todavía no tiene fotos cargadas. Escribinos por WhatsApp y te pasamos más información.",
+        "Consultar por WhatsApp",
+        "https://wa.me/5493517557401"
+      );
+      return;
+    }
 
-    contenedor.innerHTML = `
+    contenedorDetalle.innerHTML = `
+      <nav class="producto-breadcrumb" aria-label="Ruta de navegación">
+        <a href="../index.html">Inicio</a>
+        <span>/</span>
+        <a href="${linkCategoria}">${etiquetaCategoria(categoriaProducto)}</a>
+        <span>/</span>
+        <span>${prod.nombre}</span>
+      </nav>
+
       <div class="detalle-container">
         <div class="galeria">
+          <a href="${linkCategoria}" class="volver-catalogo">← Volver a ${etiquetaCategoria(categoriaProducto)}</a>
+
           <img
             src="${imagenes[0].trim()}"
             class="principal"
             id="imgPrincipal"
             alt="${prod.nombre}"
-            onclick="abrirModal(0)"
+            onclick="abrirModal()"
           >
 
           <div class="thumbs">
@@ -59,7 +104,7 @@ fetch(URL)
                 src="${img.trim()}"
                 alt="${prod.nombre} ${i + 1}"
                 class="${i === 0 ? "activa" : ""}"
-                onclick="cambiarImagen('${img.trim()}', this)"
+                onclick="cambiarImagen('${img.trim()}', this, ${i})"
               >
             `).join("")}
           </div>
@@ -99,12 +144,95 @@ fetch(URL)
           ` : ""}
 
           ${!disponible ? `<p class="sin-stock">Este producto está agotado</p>` : ""}
+          ${!disponible ? renderReposicionWhatsapp(prod) : ""}
         </div>
       </div>
     `;
 
     actualizarEstadoStock();
+  })
+  .catch(() => {
+    mostrarEstadoProducto(
+      "No pudimos cargar el producto",
+      "Intentá de nuevo en unos minutos o escribinos por WhatsApp.",
+      "Contactar por WhatsApp",
+      "https://wa.me/5493517557401"
+    );
   });
+
+function mostrarEstadoProducto(titulo, texto, accion, href) {
+  if (!contenedorDetalle) return;
+
+  contenedorDetalle.innerHTML = `
+    <div class="catalogo-estado producto-estado">
+      <h3>${titulo}</h3>
+      <p>${texto}</p>
+      ${accion && href ? `<a href="${href}" ${href.startsWith("http") ? `target="_blank" rel="noopener"` : ""}>${accion}</a>` : ""}
+    </div>
+  `;
+}
+
+function actualizarSeoProducto({ nombre, descripcion, imagen }) {
+  const titulo = nombre ? `${nombre} | KOVEN` : "Producto | KOVEN";
+  const texto = descripcion || "Producto KOVEN con compra simple por WhatsApp.";
+
+  document.title = titulo;
+  actualizarMeta("name", "description", texto);
+  actualizarMeta("property", "og:title", titulo);
+  actualizarMeta("property", "og:description", texto);
+
+  if (imagen) {
+    actualizarMeta("property", "og:image", imagen);
+    actualizarMeta("name", "twitter:image", imagen);
+  }
+}
+
+function actualizarMeta(atributo, clave, contenido) {
+  let meta = document.querySelector(`meta[${atributo}="${clave}"]`);
+
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(atributo, clave);
+    document.head.appendChild(meta);
+  }
+
+  meta.setAttribute("content", contenido);
+}
+
+function obtenerCategoriaNormalizada(prod) {
+  const categoria = normalizarTexto(prod?.categoria);
+
+  if (categoria === "buzos") return "abrigos";
+  if (categoria === "jeans") return "pantalones";
+
+  return categoria || "catalogo";
+}
+
+function etiquetaCategoria(cat) {
+  const etiquetas = {
+    remeras: "Remeras",
+    abrigos: "Abrigos",
+    pantalones: "Pantalones",
+    gorras: "Gorras",
+    medias: "Medias",
+    accesorios: "Accesorios",
+    catalogo: "Catálogo"
+  };
+
+  return etiquetas[cat] || cat;
+}
+
+function renderReposicionWhatsapp(prod) {
+  const mensaje = `Hola KOVEN! Quería consultar si van a reponer este producto: ${prod.nombre}`;
+  const href = `https://wa.me/5493517557401?text=${encodeURIComponent(mensaje)}`;
+
+  return `
+    <div class="reposicion-box">
+      <p>Consultá reposición por WhatsApp.</p>
+      <a href="${href}" target="_blank" rel="noopener">Preguntar disponibilidad</a>
+    </div>
+  `;
+}
 
 function renderColores(colores) {
   if (!colores.length) return "";
@@ -390,9 +518,19 @@ function actualizarEstadoStock() {
   }
 }
 
-function cambiarImagen(src, el) {
+function cambiarImagen(src, el, index) {
   const principal = document.getElementById("imgPrincipal");
-  principal.src = src;
+  if (!principal) return;
+
+  indexActual = index;
+  principal.classList.add("cambiando");
+
+  setTimeout(() => {
+    principal.src = src;
+    principal.onload = () => {
+      principal.classList.remove("cambiando");
+    };
+  }, 120);
 
   document.querySelectorAll(".thumbs img").forEach(img => {
     img.classList.remove("activa");
@@ -442,9 +580,11 @@ function agregarDesdeProducto(id) {
   localStorage.setItem("carrito", JSON.stringify(carrito));
 
   const btn = document.querySelector(".btn-agregar");
+  const cantidadAgregada = cantidadSeleccionada;
 
-  btn.textContent = cantidadSeleccionada > 1 ? `Agregados ${cantidadSeleccionada} ✓` : "Agregado ✓";
+  btn.textContent = cantidadAgregada > 1 ? `Agregados ${cantidadAgregada} ✓` : "Agregado ✓";
   btn.classList.add("agregado");
+  mostrarToastCarrito(cantidadAgregada);
   cantidadSeleccionada = 1;
   actualizarCantidadUI();
 
@@ -458,18 +598,27 @@ function agregarDesdeProducto(id) {
 
 actualizarContador();
 
-function abrirModal(index) {
-  indexActual = index;
+function abrirModal(index = indexActual) {
+  indexActual = Number.isInteger(index) ? index : indexActual;
 
   const modal = document.getElementById("modal");
   const img = document.getElementById("imgModal");
 
   img.src = imagenesGlobal[index].trim();
   modal.style.display = "flex";
+  actualizarContadorModal();
 }
 
 function cerrarModal() {
   document.getElementById("modal").style.display = "none";
+}
+
+const modalGaleria = document.getElementById("modal");
+
+if (modalGaleria) {
+  modalGaleria.addEventListener("click", (e) => {
+    if (e.target === modalGaleria) cerrarModal();
+  });
 }
 
 function cambiarSlide(dir) {
@@ -479,6 +628,35 @@ function cambiarSlide(dir) {
   if (indexActual >= imagenesGlobal.length) indexActual = 0;
 
   document.getElementById("imgModal").src = imagenesGlobal[indexActual].trim();
+  actualizarContadorModal();
+}
+
+function actualizarContadorModal() {
+  const contador = document.getElementById("modalContador");
+  if (!contador) return;
+
+  contador.textContent = `${indexActual + 1} / ${imagenesGlobal.length}`;
+}
+
+function mostrarToastCarrito(cantidad) {
+  let toast = document.getElementById("toastCarrito");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toastCarrito";
+    toast.className = "toast-carrito";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = cantidad > 1
+    ? `${cantidad} productos agregados al carrito`
+    : "Producto agregado al carrito";
+  toast.classList.add("visible");
+
+  clearTimeout(toast.timeoutId);
+  toast.timeoutId = setTimeout(() => {
+    toast.classList.remove("visible");
+  }, 1800);
 }
 
 document.addEventListener("keydown", (e) => {

@@ -2,18 +2,24 @@ const URL = "https://opensheet.elk.sh/11wJ42eVjai6vehi7x7_vysC1ju1pF1oGH_hmwx5Ng
 
 let carrito = normalizarOrdenCarrito(JSON.parse(localStorage.getItem("carrito")) || []);
 let productosSheet = [];
+let stockSinVerificar = false;
 
 const contenedor = document.getElementById("carrito");
 
 localStorage.setItem("carrito", JSON.stringify(carrito));
 
 fetch(URL)
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("No se pudo verificar el stock");
+    return res.json();
+  })
   .then(data => {
     productosSheet = data;
+    stockSinVerificar = false;
     actualizar();
   })
   .catch(() => {
+    stockSinVerificar = true;
     actualizar();
   });
 
@@ -195,10 +201,35 @@ function renderCarrito() {
   contenedor.innerHTML = "";
 
   const productos = agruparCarrito();
+  const entregaBox = document.querySelector(".entrega-box");
+  const resumenBox = document.querySelector(".carrito-resumen");
   let total = 0;
 
   if (productos.length === 0) {
-    contenedor.innerHTML = `<p class="carrito-vacio">Tu carrito está vacío.</p>`;
+    contenedor.innerHTML = `
+      <div class="carrito-vacio">
+        <h2>Tu carrito está vacío</h2>
+        <p>Explorá el catálogo y agregá las prendas que quieras reservar por WhatsApp.</p>
+        <a href="catalogo.html">Ver productos</a>
+      </div>
+    `;
+
+    if (entregaBox) entregaBox.classList.add("oculto");
+    if (resumenBox) resumenBox.classList.add("oculto");
+    document.getElementById("total").innerText = "";
+    return;
+  }
+
+  if (entregaBox) entregaBox.classList.remove("oculto");
+  if (resumenBox) resumenBox.classList.remove("oculto");
+
+  if (stockSinVerificar) {
+    contenedor.innerHTML = `
+      <div class="carrito-aviso">
+        <strong>Stock pendiente de confirmar</strong>
+        <p>No pudimos verificar el stock en tiempo real. Podés enviar el pedido igual y lo confirmamos por WhatsApp.</p>
+      </div>
+    `;
   }
 
   productos.forEach(prod => {

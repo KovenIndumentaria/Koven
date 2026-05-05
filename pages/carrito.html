@@ -53,6 +53,31 @@
 
     <div id="carrito" class="carrito-lista"></div>
 
+    <section class="entrega-box" aria-labelledby="entrega-title">
+      <h2 id="entrega-title">¿Cómo querés recibir tu pedido?</h2>
+
+      <label class="entrega-opcion">
+        <input type="radio" name="entrega" value="retiro" checked onchange="actualizarEntrega()">
+        <span>
+          <strong>Retiro por Arturo M Bas 389 - Córdoba Capital</strong>
+          <small>Gratis. Coordinamos día y horario por WhatsApp.</small>
+        </span>
+      </label>
+
+      <label class="entrega-opcion">
+        <input type="radio" name="entrega" value="envio" onchange="actualizarEntrega()">
+        <span>
+          <strong>Envío a coordinar</strong>
+          <small>El costo y la disponibilidad se confirman por WhatsApp.</small>
+        </span>
+      </label>
+
+      <div class="direccion-envio" id="direccionEnvio">
+        <label for="direccion">Dirección de envío</label>
+        <textarea id="direccion" rows="3" placeholder="Calle, número, barrio y referencias"></textarea>
+      </div>
+    </section>
+
     <div class="carrito-resumen">
       <h3 id="total"></h3>
       <button onclick="comprar()" class="btn-comprar">Finalizar compra</button>

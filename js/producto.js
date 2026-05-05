@@ -429,9 +429,14 @@ function agregarDesdeProducto(id) {
   };
 
   let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
+  const keyProducto = producto.id + "_" + producto.talle + "_" + producto.color;
+  const existente = carrito.find(item =>
+    item.id + "_" + item.talle + "_" + item.color === keyProducto
+  );
+  const orderKey = existente?.orderKey || existente?.timestamp || Date.now();
 
   for (let i = 0; i < cantidadSeleccionada; i++) {
-    carrito.push({ ...producto, timestamp: Date.now() + i });
+    carrito.push({ ...producto, timestamp: Date.now() + i, orderKey });
   }
 
   localStorage.setItem("carrito", JSON.stringify(carrito));

@@ -12,8 +12,9 @@ let colorSeleccionado = "";
 let colorHexSeleccionado = "";
 let cantidadSeleccionada = 1;
 const contenedorDetalle = document.getElementById("detalle");
+const MOSTRAR_ULTIMAS_UNIDADES = false;
 
-mostrarEstadoProducto("Cargando producto", "Estamos preparando la información y el stock disponible.");
+mostrarSkeletonProducto();
 
 fetch(URL)
   .then(res => {
@@ -147,6 +148,8 @@ fetch(URL)
           ${!disponible ? renderReposicionWhatsapp(prod) : ""}
         </div>
       </div>
+
+      ${renderRelacionados(data, prod, categoriaProducto)}
     `;
 
     actualizarEstadoStock();
@@ -168,6 +171,40 @@ function mostrarEstadoProducto(titulo, texto, accion, href) {
       <h3>${titulo}</h3>
       <p>${texto}</p>
       ${accion && href ? `<a href="${href}" ${href.startsWith("http") ? `target="_blank" rel="noopener"` : ""}>${accion}</a>` : ""}
+    </div>
+  `;
+}
+
+function mostrarSkeletonProducto() {
+  if (!contenedorDetalle) return;
+
+  contenedorDetalle.innerHTML = `
+    <div class="producto-skeleton-detalle" aria-label="Cargando producto">
+      <div class="skeleton-galeria">
+        <span class="skeleton-volver"></span>
+        <span class="skeleton-imagen"></span>
+        <div class="skeleton-thumbs">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <div class="skeleton-info">
+        <span class="skeleton-kicker"></span>
+        <span class="skeleton-title"></span>
+        <span class="skeleton-title skeleton-title--short"></span>
+        <span class="skeleton-price"></span>
+        <span class="skeleton-label"></span>
+        <div class="skeleton-options">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <span class="skeleton-button"></span>
+        <span class="skeleton-copy"></span>
+        <span class="skeleton-copy skeleton-copy--short"></span>
+      </div>
     </div>
   `;
 }
@@ -230,6 +267,60 @@ function renderReposicionWhatsapp(prod) {
     <div class="reposicion-box">
       <p>Consultá reposición por WhatsApp.</p>
       <a href="${href}" target="_blank" rel="noopener">Preguntar disponibilidad</a>
+    </div>
+  `;
+}
+
+function debeMostrarProducto(prod) {
+  const valor = normalizarTexto(prod?.mostrar);
+  return valor === "" || valor === "true" || valor === "si" || valor === "sí" || valor === "1";
+}
+
+function productoAgotado(prod) {
+  const estado = normalizarTexto(prod?.estado);
+  return estado === "agotado" || estado === "sin stock" || estado === "no disponible";
+}
+
+function renderRelacionados(productos, productoActual, categoriaProducto) {
+  const relacionados = mezclarLista(productos
+    .filter(prod => prod.id != productoActual.id)
+    .filter(debeMostrarProducto)
+    .filter(prod => obtenerCategoriaNormalizada(prod) === categoriaProducto))
+    .slice(0, 4);
+
+  if (!relacionados.length) return "";
+
+  return `
+    <section class="relacionados-section" aria-labelledby="relacionados-title">
+      <div class="section-heading">
+        <span>También puede gustarte</span>
+        <h2 class="section-title" id="relacionados-title">Misma categoría</h2>
+      </div>
+      <div class="productos relacionados-grid">
+        ${relacionados.map(renderCardRelacionada).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function mezclarLista(lista) {
+  return [...lista].sort(() => Math.random() - 0.5);
+}
+
+function renderCardRelacionada(prod) {
+  const agotado = productoAgotado(prod);
+  const imagen = prod.imagenes
+    ? prod.imagenes.split(",")[0].trim()
+    : "https://via.placeholder.com/300x400?text=Sin+imagen";
+
+  return `
+    <div class="producto producto--catalogo ${agotado ? "producto--agotado" : ""}">
+      <a href="producto.html?id=${prod.id}" aria-label="Ver ${prod.nombre}">
+        <img src="${imagen}" alt="${prod.nombre}">
+        ${agotado ? `<span class="producto-badge">Sin stock</span>` : ""}
+        <h3>${prod.nombre}</h3>
+        <p>$${Number(prod.precio).toLocaleString("es-AR")}</p>
+      </a>
     </div>
   `;
 }
@@ -514,7 +605,11 @@ function actualizarEstadoStock() {
   btn.disabled = false;
 
   if (mensaje) {
-    mensaje.textContent = restante === Infinity ? "" : `Stock disponible: ${restante}`;
+    if (MOSTRAR_ULTIMAS_UNIDADES && restante !== Infinity && restante <= 3) {
+      mensaje.textContent = restante === 1 ? "Última unidad disponible" : `Últimas ${restante} unidades disponibles`;
+    } else {
+      mensaje.textContent = restante === Infinity ? "" : `Stock disponible: ${restante}`;
+    }
   }
 }
 

@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medias | KOVEN</title>
-  <meta name="description" content="Medias KOVEN, incluyendo modelos 3/4 y opciones urbanas para completar tu outfit. Compra por WhatsApp.">
+  <title>Políticas | KOVEN</title>
+  <meta name="description" content="Políticas de compra KOVEN: pagos, retiros, envíos, cambios y disponibilidad de stock.">
   <meta name="theme-color" content="#050505">
-  <meta property="og:title" content="Medias | KOVEN">
-  <meta property="og:description" content="Medias urbanas KOVEN. Revisá modelos disponibles y comprá por WhatsApp.">
+  <meta property="og:title" content="Políticas | KOVEN">
+  <meta property="og:description" content="Información sobre pagos, retiros, envíos, cambios y stock en KOVEN.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="../assets/img/hero-koven-men.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -30,7 +30,7 @@
         <a href="abrigos.html">Abrigos</a>
         <a href="pantalones.html">Pantalones</a>
         <a href="gorras.html">Gorras</a>
-        <a href="medias.html" class="activo">Medias</a>
+        <a href="medias.html">Medias</a>
         <a href="accesorios.html">Accesorios</a>
       </nav>
       <div class="acciones">
@@ -42,22 +42,53 @@
     </div>
   </header>
 
-  <main class="catalogo">
+  <main class="politicas-page">
     <div class="catalogo-header">
       <div>
-        <span>Catálogo</span>
-        <h1>Medias</h1>
+        <span>Información de compra</span>
+        <h1>Políticas</h1>
+        <p class="politicas-intro">Comprá simple por WhatsApp. Coordinamos cada pedido de forma directa para confirmar stock, pago, entrega o retiro.</p>
       </div>
-      <button class="btn-filtros" onclick="toggleFiltros()">Filtrar</button>
     </div>
 
-    <div class="catalogo-body">
-      <aside class="filters" id="filtros"></aside>
-      <section class="productos-grid" id="productos"></section>
-    </div>
+    <section class="politicas-grid">
+      <article>
+        <span>01</span>
+        <h2>Pagos</h2>
+        <p>Los medios de pago se coordinan por WhatsApp al finalizar el pedido. El pedido queda confirmado cuando se acuerda el pago y la entrega.</p>
+      </article>
+
+      <article>
+        <span>02</span>
+        <h2>Retiro</h2>
+        <p>Podés retirar por Arturo M Bas 389 - Córdoba Capital. El día y horario se coordinan por WhatsApp.</p>
+      </article>
+
+      <article>
+        <span>03</span>
+        <h2>Envíos</h2>
+        <p>Los envíos se coordinan según zona y disponibilidad. El costo se informa antes de confirmar la compra.</p>
+      </article>
+
+      <article>
+        <span>04</span>
+        <h2>Cambios</h2>
+        <p>Los cambios están sujetos a disponibilidad de stock y estado de la prenda. Consultanos por WhatsApp para revisar cada caso.</p>
+      </article>
+
+      <article>
+        <span>05</span>
+        <h2>Stock</h2>
+        <p>El stock es limitado y puede variar. Si una prenda se agota, podés consultar reposición desde la página del producto.</p>
+      </article>
+
+      <article>
+        <span>06</span>
+        <h2>Medidas</h2>
+        <p>Las medidas pueden variar según marca, modelo y calce. Si tenés dudas con un talle, escribinos antes de comprar.</p>
+      </article>
+    </section>
   </main>
-
-  <div class="filtros-overlay" onclick="cerrarFiltros()"></div>
 
   <footer class="footer">
     <div class="footer-brand">
@@ -75,18 +106,11 @@
     </div>
   </footer>
 
-  <script>
-    const categoria = "medias";
-    const categoriaTitulo = "Tipo";
-  </script>
   <script src="../js/menu.js"></script>
   <script src="../js/carrito-utils.js"></script>
-  <script src="../js/app.js"></script>
   <script>
     actualizarContador();
   </script>
 </body>
 
 </html>
-
-

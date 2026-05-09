@@ -250,6 +250,61 @@ main {
   transform: translateY(-2px);
 }
 
+.marca-home {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 58px 24px;
+  background: var(--off-white);
+}
+
+.marca-home__content {
+  max-width: 760px;
+}
+
+.marca-home__content span,
+.marca-home__meta span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.marca-home__content h2 {
+  margin-top: 10px;
+  font-size: clamp(26px, 8vw, 54px);
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.marca-home__content p {
+  max-width: 620px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.marca-home__meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.marca-home__meta span {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  color: var(--ink);
+}
+
 .nuevos-ingresos {
   background: var(--off-white);
   padding: 76px 24px 80px;
@@ -594,26 +649,50 @@ main {
 }
 
 .categorias a {
-  min-height: 84px;
-  display: flex;
-  align-items: end;
-  padding: 16px;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
   color: var(--ink);
   text-decoration: none;
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .categorias a:hover {
-  background: var(--ink);
-  color: var(--white);
+  border-color: var(--ink);
   transform: translateY(-2px);
+}
+
+.categoria-card img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  background: #e8e5dc;
+  transition: transform 0.28s ease, opacity 0.2s ease;
+}
+
+.categoria-card:hover img {
+  transform: scale(1.025);
+}
+
+.categoria-card strong {
+  display: block;
+  padding: 0 14px;
+}
+
+.categoria-card strong {
+  padding-top: 4px;
+  padding-bottom: 16px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .categorias-home,
@@ -1015,6 +1094,22 @@ main {
   color: var(--charcoal);
   font-size: 13px;
   font-weight: 700;
+}
+
+.consulta-medidas {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.consulta-medidas:hover {
+  color: var(--ink);
 }
 
 .talle-btn,
@@ -1600,7 +1695,7 @@ button:disabled {
 .footer {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 26px;
+  gap: 26px 22px;
   margin-top: auto;
   padding: 34px 16px;
   background: var(--ink);
@@ -1609,8 +1704,8 @@ button:disabled {
 }
 
 .footer-brand,
-.footer-links,
-.footer-info {
+.footer-col,
+.footer-legal {
   max-width: 1240px;
 }
 
@@ -1620,20 +1715,29 @@ button:disabled {
 }
 
 .footer-brand p,
-.footer-info span {
+.footer-col span,
+.footer-legal span {
   color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
   line-height: 1.6;
 }
 
-.footer-links,
-.footer-info {
+.footer-col {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.footer-links a {
+.footer-col h3 {
+  margin-bottom: 2px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.footer-col a {
   width: fit-content;
   color: var(--white);
   text-decoration: none;
@@ -1643,8 +1747,13 @@ button:disabled {
   letter-spacing: 0.08em;
 }
 
-.footer-links a:hover {
+.footer-col a:hover {
   color: var(--cement);
+}
+
+.footer-legal {
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .contador.animar {
@@ -1710,6 +1819,11 @@ button:disabled {
   .productos-carousel {
     grid-template-columns: none;
     grid-auto-columns: minmax(240px, 31vw);
+  }
+  .marca-home {
+    grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+    align-items: end;
+    padding: 72px 24px;
   }
   .categorias {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1799,14 +1913,17 @@ button:disabled {
     width: auto;
   }
   .footer {
-    grid-template-columns: minmax(260px, 1.4fr) minmax(160px, 0.6fr) minmax(220px, 1fr);
+    grid-template-columns: minmax(260px, 1.35fr) minmax(130px, 0.65fr) minmax(170px, 0.75fr) minmax(210px, 0.9fr);
     align-items: start;
     padding: 48px 28px;
   }
   .footer-brand,
-  .footer-links,
-  .footer-info {
+  .footer-col,
+  .footer-legal {
     width: 100%;
+  }
+  .footer-legal {
+    grid-column: 1/-1;
   }
 }
 @media (min-width: 940px) {

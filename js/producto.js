@@ -365,11 +365,13 @@ function renderTalles(talles) {
   if (talles.length === 1) {
     const talle = talles[0];
     const texto = normalizarTexto(talle) === "único" ? "Talle único" : `Talle: ${talle}`;
+    const esTalleUnico = normalizarTexto(talle) === "único";
 
     return `
       <div class="opcion-unica">
         <p class="label">Talle</p>
         <span>${texto}</span>
+        ${esTalleUnico ? "" : renderConsultaMedidas()}
       </div>
     `;
   }
@@ -388,7 +390,20 @@ function renderTalles(talles) {
           </button>
         `).join("")}
       </div>
+      ${renderConsultaMedidas()}
     </div>
+  `;
+}
+
+function renderConsultaMedidas() {
+  const nombre = productoActual?.nombre || "este producto";
+  const mensaje = `Hola KOVEN! Tengo una duda con el talle de ${nombre}. ¿Me pasan medidas?`;
+  const href = `https://wa.me/5493517557401?text=${encodeURIComponent(mensaje)}`;
+
+  return `
+    <a class="consulta-medidas" href="${href}" target="_blank" rel="noopener">
+      ¿Dudás con el talle? Consultanos medidas por WhatsApp.
+    </a>
   `;
 }
 

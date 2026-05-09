@@ -144,6 +144,8 @@ fetch(URL)
             </div>
           ` : ""}
 
+          ${renderDetallesProducto(prod, categoriaProducto, colores, talles)}
+
           ${!disponible ? `<p class="sin-stock">Este producto está agotado</p>` : ""}
           ${!disponible ? renderReposicionWhatsapp(prod) : ""}
         </div>
@@ -323,6 +325,42 @@ function renderCardRelacionada(prod) {
       </a>
     </div>
   `;
+}
+
+function renderDetallesProducto(prod, categoriaProducto, colores, talles) {
+  const detalles = [
+    ["Categoría", etiquetaCategoria(categoriaProducto)]
+  ];
+
+  const estilos = obtenerEstilos(prod);
+  if (estilos.length) detalles.push(["Estilo", estilos.join(" / ")]);
+  if (colores.length === 1) detalles.push(["Color", colores[0].nombre]);
+  if (talles.length === 1) detalles.push(["Talle", normalizarTexto(talles[0]) === "único" ? "Único" : talles[0]]);
+
+  if (detalles.length <= 1) return "";
+
+  return `
+    <div class="producto-detalles">
+      <h3>Detalles</h3>
+      <dl>
+        ${detalles.map(([label, valor]) => `
+          <div>
+            <dt>${label}</dt>
+            <dd>${valor}</dd>
+          </div>
+        `).join("")}
+      </dl>
+    </div>
+  `;
+}
+
+function obtenerEstilos(prod) {
+  const fuente = prod.estilo || prod.fit || prod.tipo || "";
+
+  return fuente
+    .split(",")
+    .map(e => e.trim())
+    .filter(Boolean);
 }
 
 function renderColores(colores) {

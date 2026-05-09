@@ -244,12 +244,15 @@ function renderCarrito() {
       : "";
     const disponible = stockDisponible(prod);
     const llegoAlMaximo = disponible !== Infinity && prod.cantidad >= disponible;
+    const linkProducto = `producto.html?id=${prod.id}`;
 
     div.innerHTML = `
       <div class="item-info">
-        <img src="${prod.imagen || ""}" alt="${prod.nombre}">
+        <a href="${linkProducto}" class="item-link-imagen" aria-label="Ver ${prod.nombre}">
+          <img src="${prod.imagen || ""}" alt="${prod.nombre}">
+        </a>
         <div>
-          <h4>${prod.nombre}</h4>
+          <h4><a href="${linkProducto}">${prod.nombre}</a></h4>
           <div class="item-meta">
             <span>Talle: ${prod.talle || "-"}</span>
             <span>${colorSwatch} Color: ${color}</span>

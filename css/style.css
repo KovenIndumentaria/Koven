@@ -1577,19 +1577,33 @@ button:disabled {
   min-width: 0;
 }
 
+.item-link-imagen {
+  display: block;
+  flex: 0 0 auto;
+}
+
 .item-info img {
   width: 78px;
   height: 96px;
   object-fit: cover;
   border-radius: var(--radius);
   background: #e8e5dc;
-  flex: 0 0 auto;
 }
 
 .item-info h4 {
   font-size: 13px;
   text-transform: uppercase;
   line-height: 1.35;
+}
+
+.item-info h4 a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.item-info h4 a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .item-meta {
@@ -1638,11 +1652,14 @@ button:disabled {
 }
 
 .item-acciones button {
+  -webkit-appearance: none;
+  appearance: none;
   width: 42px;
   height: 42px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--off-white);
+  color: var(--ink);
   cursor: pointer;
   font-weight: 800;
 }

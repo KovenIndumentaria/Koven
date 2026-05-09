@@ -1052,6 +1052,9 @@ main {
   font-size: clamp(28px, 9vw, 56px);
   line-height: 0.95;
   text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .info > p {
@@ -1973,6 +1976,11 @@ button:disabled {
     top: 96px;
     padding: 28px;
   }
+  .info h1 {
+    font-size: clamp(30px, 4.2vw, 44px);
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
   .carrito-resumen {
     align-items: end;
   }
@@ -1981,7 +1989,7 @@ button:disabled {
     width: auto;
   }
   .footer {
-    grid-template-columns: minmax(260px, 1.35fr) minmax(130px, 0.65fr) minmax(170px, 0.75fr) minmax(210px, 0.9fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
     align-items: start;
     padding: 48px 28px;
   }
@@ -1992,6 +2000,16 @@ button:disabled {
   }
   .footer-legal {
     grid-column: 1/-1;
+  }
+}
+@media (min-width: 1040px) {
+  .footer {
+    grid-template-columns: minmax(260px, 1.35fr) minmax(130px, 0.65fr) minmax(170px, 0.75fr) minmax(210px, 0.9fr);
+  }
+  .info h1 {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
   }
 }
 @media (min-width: 940px) {

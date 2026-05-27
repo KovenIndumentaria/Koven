@@ -53,6 +53,7 @@ function obtenerCategoriaNormalizada(prod) {
 
   if (categoriaProducto === "buzos") return "abrigos";
   if (categoriaProducto === "jeans") return "pantalones";
+  if (["medias-boxers", "medias y boxers", "boxers"].includes(categoriaProducto)) return "medias";
 
   return categoriaProducto;
 }
@@ -63,7 +64,7 @@ function etiquetaCategoria(cat) {
     abrigos: "Abrigos",
     pantalones: "Pantalones",
     gorras: "Gorras",
-    medias: "Medias",
+    medias: "Medias y Boxers",
     accesorios: "Accesorios"
   };
 
@@ -79,6 +80,10 @@ function perteneceACategoria(prod) {
 
   if (categoriaPagina === "pantalones") {
     return categoriaProducto === "pantalones" || categoriaProducto === "jeans";
+  }
+
+  if (categoriaPagina === "medias") {
+    return categoriaProducto === "medias" || ["medias-boxers", "medias y boxers", "boxers"].includes(categoriaProducto);
   }
 
   return categoriaProducto === categoriaPagina;

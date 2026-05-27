@@ -243,6 +243,7 @@ function obtenerCategoriaNormalizada(prod) {
 
   if (categoria === "buzos") return "abrigos";
   if (categoria === "jeans") return "pantalones";
+  if (["medias-boxers", "medias y boxers", "boxers"].includes(categoria)) return "medias";
 
   return categoria || "catalogo";
 }
@@ -253,7 +254,7 @@ function etiquetaCategoria(cat) {
     abrigos: "Abrigos",
     pantalones: "Pantalones",
     gorras: "Gorras",
-    medias: "Medias",
+    medias: "Medias y Boxers",
     accesorios: "Accesorios",
     catalogo: "Catálogo"
   };

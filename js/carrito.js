@@ -1,18 +1,15 @@
-const URL = "https://opensheet.elk.sh/11wJ42eVjai6vehi7x7_vysC1ju1pF1oGH_hmwx5NgRY/Hoja1";
-
 let carrito = normalizarOrdenCarrito(JSON.parse(localStorage.getItem("carrito")) || []);
 let productosSheet = [];
 let stockSinVerificar = false;
+let storeSettings = null;
+let checkoutInProgress = false;
+const LAST_ORDER_KEY = "kovenLastOrder";
 
 const contenedor = document.getElementById("carrito");
 
 localStorage.setItem("carrito", JSON.stringify(carrito));
 
-fetch(URL)
-  .then(res => {
-    if (!res.ok) throw new Error("No se pudo verificar el stock");
-    return res.json();
-  })
+window.KovenCatalog.getProducts({ forceRefresh: true })
   .then(data => {
     productosSheet = data;
     stockSinVerificar = false;
@@ -22,6 +19,28 @@ fetch(URL)
     stockSinVerificar = true;
     actualizar();
   });
+
+window.KovenCatalog.getSettings().then(settings => {
+  storeSettings = settings;
+  const pickup = document.getElementById("pickupOption");
+  const shipping = document.getElementById("shippingOption");
+  if (pickup) pickup.hidden = !settings.pickup_enabled;
+  if (shipping) shipping.hidden = !settings.shipping_enabled;
+  const pickupLabel = document.getElementById("pickupLabel");
+  if (pickupLabel) pickupLabel.textContent = `Retiro por ${settings.pickup_address}`;
+  const shippingLabel = document.getElementById("shippingLabel");
+  if (shippingLabel) shippingLabel.textContent = settings.shipping_mode === "flat" ? `Costo fijo: $${Number(settings.shipping_cost).toLocaleString("es-AR")}${settings.free_shipping_from ? ` · Gratis desde $${Number(settings.free_shipping_from).toLocaleString("es-AR")}` : ""}` : "El costo y la disponibilidad se confirman por WhatsApp.";
+  const checkoutMessage = document.getElementById("checkoutMessage");
+  if (checkoutMessage && settings.checkout_message) checkoutMessage.textContent = settings.checkout_message;
+  if (!settings.pickup_enabled && settings.shipping_enabled) document.querySelector('input[name="entrega"][value="envio"]').checked = true;
+  actualizarEntrega(); renderCarrito();
+}).catch(() => {});
+
+function calcularEnvio(subtotal) {
+  if (obtenerEntregaSeleccionada() !== "envio" || !storeSettings || storeSettings.shipping_mode !== "flat") return 0;
+  if (storeSettings.free_shipping_from && subtotal >= Number(storeSettings.free_shipping_from)) return 0;
+  return Number(storeSettings.shipping_cost || 0);
+}
 
 function normalizarTexto(valor) {
   return String(valor || "").trim().toLowerCase();
@@ -206,10 +225,12 @@ function renderCarrito() {
   let total = 0;
 
   if (productos.length === 0) {
+    const lastOrder = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || "null");
+    const recentOrder = lastOrder && Date.now() - Number(lastOrder.createdAt || 0) < 86400000;
     contenedor.innerHTML = `
-      <div class="carrito-vacio">
-        <h2>Tu carrito está vacío</h2>
-        <p>Explorá el catálogo y agregá las prendas que quieras reservar por WhatsApp.</p>
+      <div class="carrito-vacio ${recentOrder ? "pedido-generado" : ""}">
+        <h2>${recentOrder ? `Pedido #${lastOrder.orderNumber} generado` : "Tu carrito está vacío"}</h2>
+        <p>${recentOrder ? "El pedido ya quedó registrado. Continuá la conversación por WhatsApp para coordinar el pago y la entrega." : "Explorá el catálogo y agregá las prendas que quieras reservar por WhatsApp."}</p>
         <a href="catalogo.html">Ver productos</a>
       </div>
     `;
@@ -277,8 +298,8 @@ function renderCarrito() {
     contenedor.appendChild(div);
   });
 
-  document.getElementById("total").innerText =
-    "Total: $" + total.toLocaleString("es-AR");
+  const envio = calcularEnvio(total);
+  document.getElementById("total").innerText = `${envio ? `Productos: $${total.toLocaleString("es-AR")} · Envío: $${envio.toLocaleString("es-AR")} · ` : ""}Total: $${(total + envio).toLocaleString("es-AR")}`;
 }
 
 function agregarUno(id, talle, color) {
@@ -333,9 +354,11 @@ function actualizarEntrega() {
   if (!direccionBox) return;
 
   direccionBox.classList.toggle("activo", tipoEntrega === "envio");
+  renderCarrito();
 }
 
-function comprar() {
+async function comprar() {
+  if (checkoutInProgress) return;
   if (carrito.length === 0) {
     alert("El carrito está vacío");
     return;
@@ -344,13 +367,40 @@ function comprar() {
   const productos = agruparCarrito();
   const tipoEntrega = obtenerEntregaSeleccionada();
   const direccion = document.getElementById("direccion")?.value.trim() || "";
+  const nombre = document.getElementById("clienteNombre")?.value.trim() || "";
+  const telefono = document.getElementById("clienteTelefono")?.value.trim() || "";
+  const boton = document.getElementById("btnFinalizar");
+
+  if (storeSettings && !storeSettings.sales_enabled) { alert("La tienda no está recibiendo pedidos online en este momento."); return; }
+
+  if (nombre.length < 2) { alert("Ingresá tu nombre y apellido"); return; }
+  if (telefono.length < 6) { alert("Ingresá un teléfono válido"); return; }
 
   if (tipoEntrega === "envio" && !direccion) {
     alert("Ingresá la dirección de envío");
     return;
   }
 
-  let mensaje = "Hola KOVEN! Quiero realizar el siguiente pedido:\n\n";
+  checkoutInProgress = true;
+  const whatsappWindow = window.open("", "_blank");
+  if (boton) { boton.disabled = true; boton.textContent = "Generando pedido…"; }
+  let pedido = null;
+  try {
+    pedido = await window.KovenCatalog.createOrder({
+      customer_name: nombre,
+      customer_phone: telefono,
+      delivery_type: tipoEntrega === "retiro" ? "pickup" : "shipping",
+      delivery_address: direccion
+    }, productos.map(prod => ({ product_id: String(prod.id), size: prod.talle || "", color: prod.color || "", quantity: prod.cantidad })));
+  } catch (error) {
+    alert("No pudimos generar el número de pedido, pero podés continuar por WhatsApp. Confirmaremos los datos manualmente.");
+  } finally {
+    checkoutInProgress = false;
+    if (boton) { boton.disabled = false; boton.textContent = "Finalizar compra"; }
+  }
+
+  let mensaje = `Hola KOVEN! Quiero realizar el siguiente pedido${pedido ? ` #${pedido.order_number}` : ""}:\n\n`;
+  mensaje += `Nombre: ${nombre}\nTeléfono: ${telefono}\n\n`;
   let subtotal = 0;
 
   productos.forEach(prod => {
@@ -363,16 +413,25 @@ function comprar() {
     mensaje += ` | x${prod.cantidad} - $${subtotalProducto}\n`;
   });
 
+  const envio = pedido ? Number(pedido.shipping_amount || 0) : calcularEnvio(subtotal);
   if (tipoEntrega === "retiro") {
-    mensaje += `\nTotal productos: $${subtotal}`;
-    mensaje += "\n\nEntrega: Retiro por Arturo M Bas 389 - Córdoba Capital";
+    mensaje += `\nTotal: $${subtotal}`;
+    mensaje += `\n\nEntrega: Retiro por ${storeSettings?.pickup_address || "Arturo M Bas 389 - Córdoba Capital"}`;
   } else {
     mensaje += `\nSubtotal: $${subtotal}`;
-    mensaje += "\n\nEntrega: Envío a coordinar";
+    mensaje += envio ? `\nEnvío: $${envio}\nTotal: $${subtotal + envio}` : "";
+    mensaje += `\n\nEntrega: ${storeSettings?.shipping_mode === "flat" ? "Envío" : "Envío a coordinar"}`;
     mensaje += `\nDirección de envío: ${direccion}`;
   }
 
-  window.open(`https://wa.me/5493517557401?text=${encodeURIComponent(mensaje)}`);
+  const whatsappUrl = `https://wa.me/${storeSettings?.whatsapp_number || "5493517557401"}?text=${encodeURIComponent(mensaje)}`;
+  if (pedido) {
+    localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ orderNumber: pedido.order_number, createdAt: Date.now() }));
+    carrito = [];
+    actualizar();
+  }
+  if (whatsappWindow) whatsappWindow.location.href = whatsappUrl;
+  else window.location.href = whatsappUrl;
 }
 
 actualizarEntrega();

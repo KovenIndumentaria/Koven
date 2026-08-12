@@ -96,8 +96,17 @@ main {
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: var(--white);
   cursor: pointer;
-  font-size: 20px;
+  font-size: 0;
   border-radius: var(--radius);
+}
+
+.menu-toggle::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  background: var(--white);
+  -webkit-mask: url("../assets/icons/menu.svg") center / contain no-repeat;
+  mask: url("../assets/icons/menu.svg") center / contain no-repeat;
 }
 
 .menu-derecha {
@@ -153,6 +162,7 @@ main {
 
 .carrito-icono img {
   width: 24px;
+  content: url("../assets/icons/cart.svg");
   filter: brightness(0) invert(1);
 }
 
@@ -736,11 +746,31 @@ main {
 }
 
 .pasos-compra span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: var(--muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
 }
+
+.pasos-compra span::after {
+  content: "";
+  width: 24px;
+  height: 24px;
+  background: var(--cement);
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.pasos-compra article:nth-child(1) span::after { -webkit-mask-image: url("../assets/icons/tags.svg"); mask-image: url("../assets/icons/tags.svg"); }
+.pasos-compra article:nth-child(2) span::after { -webkit-mask-image: url("../assets/icons/cart.svg"); mask-image: url("../assets/icons/cart.svg"); }
+.pasos-compra article:nth-child(3) span::after { -webkit-mask-image: url("../assets/icons/whatsapp.svg"); mask-image: url("../assets/icons/whatsapp.svg"); }
 
 .pasos-compra h3 {
   margin-top: auto;
@@ -1511,6 +1541,11 @@ button:disabled {
   letter-spacing: 0.08em;
 }
 
+.carrito-vacio.pedido-generado {
+  border-left: 4px solid #2f7d4c;
+  background: #f4fbf6;
+}
+
 .carrito-aviso {
   padding: 16px;
   border: 1px solid var(--line);
@@ -1751,6 +1786,17 @@ button:disabled {
   width: 100%;
 }
 
+.btn-comprar { gap: 10px; }
+.btn-comprar::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  background: var(--white);
+  -webkit-mask: url("../assets/icons/whatsapp.svg") center / contain no-repeat;
+  mask: url("../assets/icons/whatsapp.svg") center / contain no-repeat;
+}
+
 .btn-vaciar {
   min-height: 42px;
   border: 0;
@@ -1821,6 +1867,31 @@ button:disabled {
 .footer-col a:hover {
   color: var(--cement);
 }
+
+.footer-col a[href*="instagram.com"],
+.footer-col a[href*="wa.me"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.footer-col a[href*="instagram.com"]::before,
+.footer-col a[href*="wa.me"]::before {
+  content: "";
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  background: var(--white);
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+.footer-col a[href*="instagram.com"]::before { -webkit-mask-image: url("../assets/icons/instagram.svg"); mask-image: url("../assets/icons/instagram.svg"); }
+.footer-col a[href*="wa.me"]::before { -webkit-mask-image: url("../assets/icons/whatsapp.svg"); mask-image: url("../assets/icons/whatsapp.svg"); }
 
 .footer-legal {
   padding-top: 22px;
@@ -2090,3 +2161,5 @@ button:disabled {
 
 
 /*# sourceMappingURL=style.css.map */
+.checkout-contacto{display:grid;gap:.5rem;margin-bottom:2rem}.checkout-contacto input{width:100%;padding:.9rem 1rem;border:1px solid #c9c9c9;background:#fff}.checkout-contacto label:not(:first-child){margin-top:.75rem}
+ [hidden] { display: none !important; }

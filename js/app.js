@@ -1,7 +1,5 @@
 let carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 
-const URL = "https://opensheet.elk.sh/11wJ42eVjai6vehi7x7_vysC1ju1pF1oGH_hmwx5NgRY/Hoja1";
-
 let productosGlobal = [];
 
 const categoriaPagina = typeof categoria !== "undefined" ? categoria : "todos";
@@ -10,8 +8,7 @@ const esCatalogoCompleto = typeof catalogoCompleto !== "undefined" && catalogoCo
 
 mostrarCargando();
 
-fetch(URL)
-  .then(res => res.json())
+window.KovenCatalog.getProducts()
   .then(data => {
     productosGlobal = data;
 

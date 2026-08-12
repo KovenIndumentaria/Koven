@@ -1,31 +1,29 @@
 # Migración de Google Sheets a Supabase
 
-## Reglas de corte
+## Estado
 
-- Google Sheets se conserva como fuente pública hasta validar Supabase.
-- No se migran URLs ni archivos de imágenes.
-- Solo se importan filas con `id` y `nombre` válidos.
-- `legacy_sheet_id` conserva el identificador anterior.
-- El stock se guarda únicamente en `product_variants.stock_current`.
-- Las filas vacías, columnas desconocidas y valores de credenciales se excluyen.
+La migración se completó el 11 de agosto de 2026. Supabase es la única fuente editable y la fuente predeterminada del catálogo.
 
-## Normalización inicial
+- Google Sheets queda congelado como respaldo histórico.
+- No existe sincronización bidireccional.
+- El importador fue retirado del panel para evitar sobrescrituras accidentales.
+- La consulta manual del Sheet requiere `?source=google-sheets` en la URL.
+- Productos, precios, variantes, imágenes y stock se administran desde el panel.
 
-- `buzos` se integra en `abrigos`.
-- `jeans` se integra en `pantalones`.
-- `medias-boxers`, `boxers` y `medias` se integran en `medias`.
-- `colores` se separa en nombre y hexadecimal.
-- `variantes` se transforma de `Color:Talle:Cantidad` a filas independientes.
-- Los productos sin imágenes continúan siendo válidos y usan placeholder.
+## Normalización aplicada
 
-## Validaciones antes del corte
+- `buzos` se integró en `abrigos`.
+- `jeans` se integró en `pantalones`.
+- `medias-boxers`, `boxers` y `medias` se integraron en `medias`.
+- Los colores se separaron en nombre y hexadecimal.
+- Las variantes se transformaron en filas independientes por color y talle.
+- `legacy_sheet_id` conserva la referencia anterior.
+- Los productos sin imágenes son válidos y utilizan un placeholder.
 
-- Cantidad de productos migrados.
-- Precios comparados por `legacy_sheet_id`.
-- Variantes y stock comparados por producto.
-- Productos activos e inactivos.
-- Categorías y filtros públicos.
-- Producto sin imagen.
-- Carrito y finalización por WhatsApp.
+## Validación del corte
 
-Después del corte, Supabase será la única fuente editable. No habrá sincronización bidireccional.
+- Catálogo y detalle de productos consultan Supabase.
+- El carrito valida stock mediante Supabase.
+- Un pedido de prueba registró correctamente productos, envío y total.
+- El panel administrativo recibió y procesó el pedido.
+- El control de datos no informó errores de integridad.

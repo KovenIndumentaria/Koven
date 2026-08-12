@@ -1511,6 +1511,11 @@ button:disabled {
   letter-spacing: 0.08em;
 }
 
+.carrito-vacio.pedido-generado {
+  border-left: 4px solid #2f7d4c;
+  background: #f4fbf6;
+}
+
 .carrito-aviso {
   padding: 16px;
   border: 1px solid var(--line);

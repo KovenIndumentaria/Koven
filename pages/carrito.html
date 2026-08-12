@@ -47,28 +47,34 @@
       <div>
         <span>Compra por WhatsApp</span>
         <h1>Tu carrito</h1>
-        <p class="carrito-ayuda">Revisá tu pedido. Al finalizar se abre WhatsApp con el mensaje armado para coordinar pago, entrega o retiro.</p>
+        <p class="carrito-ayuda" id="checkoutMessage">Revisá tu pedido. Al finalizar se abre WhatsApp con el mensaje armado para coordinar pago, entrega o retiro.</p>
       </div>
     </div>
 
     <div id="carrito" class="carrito-lista"></div>
 
     <section class="entrega-box" aria-labelledby="entrega-title">
+      <div class="checkout-contacto">
+        <label for="clienteNombre">Nombre y apellido</label>
+        <input id="clienteNombre" type="text" autocomplete="name" maxlength="100" required>
+        <label for="clienteTelefono">Teléfono</label>
+        <input id="clienteTelefono" type="tel" autocomplete="tel" maxlength="40" placeholder="Ej: 351 555 1234" required>
+      </div>
       <h2 id="entrega-title">¿Cómo querés recibir tu pedido?</h2>
 
-      <label class="entrega-opcion">
+      <label class="entrega-opcion" id="pickupOption">
         <input type="radio" name="entrega" value="retiro" checked onchange="actualizarEntrega()">
         <span>
-          <strong>Retiro por Arturo M Bas 389 - Córdoba Capital</strong>
+          <strong id="pickupLabel">Retiro por Arturo M Bas 389 - Córdoba Capital</strong>
           <small>Gratis. Coordinamos día y horario por WhatsApp.</small>
         </span>
       </label>
 
-      <label class="entrega-opcion">
+      <label class="entrega-opcion" id="shippingOption">
         <input type="radio" name="entrega" value="envio" onchange="actualizarEntrega()">
         <span>
           <strong>Envío a coordinar</strong>
-          <small>El costo y la disponibilidad se confirman por WhatsApp.</small>
+          <small id="shippingLabel">El costo y la disponibilidad se confirman por WhatsApp.</small>
         </span>
       </label>
 
@@ -80,7 +86,7 @@
 
     <div class="carrito-resumen">
       <h3 id="total"></h3>
-      <button onclick="comprar()" class="btn-comprar">Finalizar compra</button>
+      <button id="btnFinalizar" onclick="comprar()" class="btn-comprar">Finalizar compra</button>
       <button onclick="vaciarCarrito()" class="btn-vaciar">Vaciar carrito</button>
     </div>
   </main>
@@ -123,6 +129,7 @@
 
   <script src="../js/menu.js"></script>
   <script src="../js/carrito-utils.js"></script>
+  <script src="../js/catalog-service.js"></script>
   <script src="../js/carrito.js"></script>
   <script>
     actualizarContador();

@@ -1,0 +1,15 @@
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Entornos y compilaciones
+**/.env
+**/.env.local
+**/.env.*.local
+**/node_modules/
+**/dist/
+
+# Registros temporales
+*.log
+npm-debug.log*

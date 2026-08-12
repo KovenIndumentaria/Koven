@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "../services/supabaseClient";
 
 const AuthContext = createContext(null);
@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const verifiedUserId = useRef(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -14,6 +15,7 @@ export function AuthProvider({ children }) {
     async function applySession(nextSession) {
       setSession(nextSession);
       if (!nextSession) {
+        verifiedUserId.current = null;
         setIsAdmin(false);
         setLoading(false);
         return;
@@ -26,6 +28,7 @@ export function AuthProvider({ children }) {
         .maybeSingle();
 
       setIsAdmin(Boolean(data));
+      verifiedUserId.current = nextSession.user.id;
       setLoading(false);
     }
 
@@ -33,7 +36,15 @@ export function AuthProvider({ children }) {
       applySession(data.session);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        setSession(nextSession);
+        return;
+      }
+      if (event === "SIGNED_IN" && nextSession?.user.id === verifiedUserId.current) {
+        setSession(nextSession);
+        return;
+      }
       setLoading(true);
       applySession(nextSession);
     });

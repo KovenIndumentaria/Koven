@@ -8,7 +8,7 @@ const close = (a, b) => Math.abs(Number(a) - Number(b)) < 0.01;
 export async function getAuditData() {
   const [orders, variantsResult, movementsResult, purchasesResult, productsResult] = await Promise.all([
     getOrders(),
-    supabase.from("product_variants").select("id,size,color_name,stock_current,cost,average_cost,is_active,product:products(id,name,is_active)"),
+    supabase.from("product_variants").select("id,size,color_name,stock_current,cost,average_cost,is_active,product:products(id,name,is_active,default_cost)"),
     supabase.from("stock_movements").select("id,variant_id,quantity_delta"),
     supabase.from("supplier_purchases").select("id,status,purchase_date,total_cost,extra_cost,supplier:suppliers(name),items:supplier_purchase_items(quantity,unit_cost),payments:supplier_purchase_payments(amount)"),
     supabase.from("products").select("id,name,is_active,variants:product_variants(id,is_active),images:product_images(id)"),
@@ -25,7 +25,8 @@ export function auditData(data) {
   data.variants.forEach((variant) => {
     const ledger = movementTotals.get(variant.id) || 0;
     if (ledger !== variant.stock_current) issues.push(issue("error", "Stock", "Stock distinto al historial", `${variant.product?.name} · ${[variant.color_name, variant.size].filter(Boolean).join(" · ") || "Variante única"}: stock ${variant.stock_current}, movimientos ${ledger}.`, variant.id));
-    if (variant.stock_current > 0 && variant.average_cost == null && variant.cost == null) issues.push(issue("warning", "Costos", "Stock sin costo conocido", `${variant.product?.name} tiene ${variant.stock_current} unidades sin costo de compra.`, variant.id));
+    const knownCost = variant.average_cost ?? variant.cost ?? variant.product?.default_cost;
+    if (variant.stock_current > 0 && knownCost == null) issues.push(issue("warning", "Costos", "Stock sin costo conocido", `${variant.product?.name} tiene ${variant.stock_current} unidades sin costo de compra ni costo de referencia.`, variant.id));
   });
   data.products.forEach((product) => {
     if (product.is_active && !(product.variants || []).some((variant) => variant.is_active)) issues.push(issue("warning", "Productos", "Producto activo sin variantes", product.name, product.id));

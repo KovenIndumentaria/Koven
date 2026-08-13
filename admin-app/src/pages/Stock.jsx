@@ -1,63 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
+import Pagination from "../components/Pagination";
+import SortableHeader from "../components/SortableHeader";
 import StockAdjustmentForm from "../components/StockAdjustmentForm";
 import { getInventory, getStockMovements } from "../services/stockService";
+import { compareValues, nextSort, paginate } from "../utils/tableView";
 
-const movementLabels = { adjustment: "Ajuste", purchase: "Compra", sale: "Venta", reversal: "Reversión" };
+const movementLabels={adjustment:"Ajuste",purchase:"Compra",sale:"Venta",reversal:"Reversión"};
+const variantLabel=(variant)=>[variant.color_name,variant.size].filter(Boolean).join(" · ")||"Variante única";
 
-function variantLabel(variant) {
-  return [variant.color_name, variant.size].filter(Boolean).join(" · ") || "Variante única";
-}
-
-export default function Stock() {
-  const [inventory, setInventory] = useState([]);
-  const [movements, setMovements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [adjusting, setAdjusting] = useState(null);
-
-  async function loadData() {
-    setLoading(true); setError("");
-    try {
-      const [nextInventory, nextMovements] = await Promise.all([getInventory(), getStockMovements()]);
-      setInventory(nextInventory);
-      setMovements(nextMovements);
-    } catch (loadError) {
-      setError(loadError.message || "No se pudo cargar el inventario.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { loadData(); }, []);
-
-  const activeInventory = inventory.filter((variant) => variant.is_active && variant.product?.is_active);
-  const summary = {
-    variants: activeInventory.length,
-    units: activeInventory.reduce((sum, variant) => sum + variant.stock_current, 0),
-    zero: activeInventory.filter((variant) => variant.stock_current === 0).length,
-    low: activeInventory.filter((variant) => variant.stock_current > 0 && variant.stock_current <= 3).length,
-  };
-
-  const filtered = useMemo(() => activeInventory.filter((variant) => {
-    const text = `${variant.product?.name || ""} ${variant.color_name} ${variant.size} ${variant.sku || ""}`.toLowerCase();
-    const matchesQuery = text.includes(query.trim().toLowerCase());
-    const matchesFilter = filter === "all" || (filter === "zero" ? variant.stock_current === 0 : filter === "low" ? variant.stock_current > 0 && variant.stock_current <= 3 : variant.stock_current > 3);
-    return matchesQuery && matchesFilter;
-  }), [activeInventory, query, filter]);
-
-  return (
-    <section>
-      <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Stock</h1><p className="page-description">Existencias por variante y trazabilidad de cada cambio.</p></div><button type="button" className="button-secondary" onClick={loadData}>Actualizar</button></div>
-      {notice && <div className="success-notice">{notice}</div>}
-      {error && <p className="form-error" role="alert">{error}</p>}
-      <div className="summary-grid"><article><span>Variantes activas</span><strong>{summary.variants}</strong></article><article><span>Unidades totales</span><strong>{summary.units}</strong></article><article><span>Stock bajo</span><strong>{summary.low}</strong></article><article><span>Sin stock</span><strong>{summary.zero}</strong></article></div>
-      <div className="toolbar"><input type="search" placeholder="Buscar producto, color, talle o SKU" value={query} onChange={(event) => setQuery(event.target.value)} /><select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">Todas</option><option value="zero">Sin stock</option><option value="low">Stock bajo (1–3)</option><option value="healthy">Más de 3</option></select><span>{filtered.length} variantes</span></div>
-      {loading ? <div className="empty-state">Cargando inventario…</div> : <div className="table-wrap"><table className="data-table"><thead><tr><th>Producto</th><th>Variante</th><th>Categoría</th><th>Stock</th><th>Último costo</th><th>Costo promedio</th><th>Actualización</th><th></th></tr></thead><tbody>{filtered.map((variant) => <tr key={variant.id}><td><strong>{variant.product?.name}</strong><small>{variant.sku || "Sin SKU"}</small></td><td>{variantLabel(variant)}</td><td>{variant.product?.category?.name || "—"}</td><td><span className={variant.stock_current === 0 ? "stock-zero" : variant.stock_current <= 3 ? "stock-low" : ""}>{variant.stock_current}</span></td><td>{variant.cost == null ? "—" : `$${Number(variant.cost).toLocaleString("es-AR")}`}</td><td>{variant.average_cost == null ? "—" : `$${Number(variant.average_cost).toLocaleString("es-AR", { maximumFractionDigits: 2 })}`}</td><td>{new Date(variant.updated_at).toLocaleString("es-AR")}</td><td><button type="button" className="button-small" onClick={() => setAdjusting(variant)}>Ajustar</button></td></tr>)}</tbody></table></div>}
-      <section className="movement-section"><div><p className="eyebrow">Auditoría</p><h2>Últimos movimientos</h2></div>{!movements.length ? <div className="empty-state">Todavía no hay movimientos.</div> : <div className="table-wrap"><table className="data-table movement-table"><thead><tr><th>Fecha</th><th>Producto</th><th>Variante</th><th>Tipo</th><th>Cambio</th><th>Motivo</th></tr></thead><tbody>{movements.map((movement) => <tr key={movement.id}><td>{new Date(movement.created_at).toLocaleString("es-AR")}</td><td>{movement.variant?.product?.name || "Producto no disponible"}</td><td>{movement.variant ? variantLabel(movement.variant) : "—"}</td><td>{movementLabels[movement.movement_type] || movement.movement_type}</td><td><strong className={movement.quantity_delta > 0 ? "movement-positive" : "movement-negative"}>{movement.quantity_delta > 0 ? "+" : ""}{movement.quantity_delta}</strong></td><td>{movement.reason}</td></tr>)}</tbody></table></div>}</section>
-      {adjusting && <StockAdjustmentForm variant={adjusting} onCancel={() => setAdjusting(null)} onSaved={async (newStock) => { setAdjusting(null); setNotice(`Stock actualizado correctamente. Nuevo saldo: ${newStock}.`); await loadData(); }} />}
-    </section>
-  );
+export default function Stock(){
+  const[inventory,setInventory]=useState([]),[movements,setMovements]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState(""),[adjusting,setAdjusting]=useState(null);
+  const[query,setQuery]=useState(""),[stockFilter,setStockFilter]=useState("all"),[costFilter,setCostFilter]=useState("all"),[visibility,setVisibility]=useState("active"),[category,setCategory]=useState("all");
+  const[sort,setSort]=useState({column:"product",direction:"asc"}),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(25);
+  const[movementSort,setMovementSort]=useState({column:"date",direction:"desc"}),[movementPage,setMovementPage]=useState(1),[movementPageSize,setMovementPageSize]=useState(25);
+  async function loadData(){setLoading(true);setError("");try{const[nextInventory,nextMovements]=await Promise.all([getInventory(),getStockMovements()]);setInventory(nextInventory);setMovements(nextMovements);}catch(loadError){setError(loadError.message||"No se pudo cargar el inventario.");}finally{setLoading(false);}}
+  useEffect(()=>{loadData();},[]);useEffect(()=>{setPage(1);},[query,stockFilter,costFilter,visibility,category,sort,pageSize]);useEffect(()=>{setMovementPage(1);},[movementSort,movementPageSize]);
+  const activeInventory=inventory.filter((variant)=>variant.is_active&&variant.product?.is_active);
+  const summary={variants:activeInventory.length,units:activeInventory.reduce((sum,variant)=>sum+variant.stock_current,0),zero:activeInventory.filter((variant)=>variant.stock_current===0).length,low:activeInventory.filter((variant)=>variant.stock_current>0&&variant.stock_current<=3).length};
+  const categories=useMemo(()=>[...new Set(inventory.map((variant)=>variant.product?.category?.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")),[inventory]);
+  const filtered=useMemo(()=>inventory.filter((variant)=>{
+    const text=`${variant.product?.name||""} ${variant.color_name} ${variant.size} ${variant.sku||""}`.toLowerCase();
+    const active=variant.is_active&&variant.product?.is_active;
+    return text.includes(query.trim().toLowerCase())&&(visibility==="all"||(visibility==="active")===active)&&(category==="all"||variant.product?.category?.name===category)&&(stockFilter==="all"||(stockFilter==="zero"?variant.stock_current===0:stockFilter==="low"?variant.stock_current>0&&variant.stock_current<=3:variant.stock_current>3))&&(costFilter==="all"||(costFilter==="with"?variant.average_cost!=null||variant.cost!=null:variant.average_cost==null&&variant.cost==null));
+  }).sort((a,b)=>{const values={product:[a.product?.name,b.product?.name],variant:[variantLabel(a),variantLabel(b)],category:[a.product?.category?.name,b.product?.category?.name],stock:[Number(a.stock_current),Number(b.stock_current)],cost:[a.cost==null?null:Number(a.cost),b.cost==null?null:Number(b.cost)],average:[a.average_cost==null?null:Number(a.average_cost),b.average_cost==null?null:Number(b.average_cost)],updated:[a.updated_at,b.updated_at]}[sort.column];return compareValues(values?.[0],values?.[1],sort.direction)||compareValues(a.product?.name,b.product?.name,"asc");}),[inventory,query,stockFilter,costFilter,visibility,category,sort]);
+  const sortedMovements=useMemo(()=>[...movements].sort((a,b)=>{const values={date:[a.created_at,b.created_at],product:[a.variant?.product?.name,b.variant?.product?.name],variant:[a.variant?variantLabel(a.variant):null,b.variant?variantLabel(b.variant):null],type:[movementLabels[a.movement_type],movementLabels[b.movement_type]],change:[Number(a.quantity_delta),Number(b.quantity_delta)],reason:[a.reason,b.reason]}[movementSort.column];return compareValues(values?.[0],values?.[1],movementSort.direction);}),[movements,movementSort]);
+  const visible=paginate(filtered,page,pageSize),visibleMovements=paginate(sortedMovements,movementPage,movementPageSize);
+  const changeSort=(column)=>setSort((current)=>nextSort(current,column,column==="updated"?"desc":"asc")),changeMovementSort=(column)=>setMovementSort((current)=>nextSort(current,column,column==="date"?"desc":"asc"));
+  return <section>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Stock</h1><p className="page-description">Existencias por variante y trazabilidad de cada cambio.</p></div><button type="button" className="button-secondary" onClick={loadData}>Actualizar</button></div>
+    {notice&&<div className="success-notice">{notice}</div>}{error&&<p className="form-error" role="alert">{error}</p>}
+    <div className="summary-grid"><article><span>Variantes activas</span><strong>{summary.variants}</strong></article><article><span>Unidades totales</span><strong>{summary.units}</strong></article><article><span>Stock bajo</span><strong>{summary.low}</strong></article><article><span>Sin stock</span><strong>{summary.zero}</strong></article></div>
+    <div className="toolbar toolbar-stock"><input type="search" placeholder="Buscar producto, color, talle o SKU" value={query} onChange={(event)=>setQuery(event.target.value)}/><select value={stockFilter} onChange={(event)=>setStockFilter(event.target.value)}><option value="all">Todo el stock</option><option value="zero">Sin stock</option><option value="low">Stock bajo (1–3)</option><option value="healthy">Más de 3</option></select><select value={costFilter} onChange={(event)=>setCostFilter(event.target.value)}><option value="all">Todos los costos</option><option value="without">Costo pendiente</option><option value="with">Con costo</option></select><select value={visibility} onChange={(event)=>setVisibility(event.target.value)}><option value="active">Activos</option><option value="inactive">Archivados</option><option value="all">Todos</option></select><select value={category} onChange={(event)=>setCategory(event.target.value)}><option value="all">Todas las categorías</option>{categories.map((name)=><option key={name}>{name}</option>)}</select><span>{filtered.length} variantes</span></div>
+    {loading?<div className="empty-state">Cargando inventario…</div>:!filtered.length?<div className="empty-state">No hay variantes para estos filtros.</div>:<><div className="table-wrap"><table className="data-table"><thead><tr><SortableHeader column="product" label="Producto" sort={sort} onSort={changeSort}/><SortableHeader column="variant" label="Variante" sort={sort} onSort={changeSort}/><SortableHeader column="category" label="Categoría" sort={sort} onSort={changeSort}/><SortableHeader column="stock" label="Stock" sort={sort} onSort={changeSort}/><SortableHeader column="cost" label="Último costo" sort={sort} onSort={changeSort}/><SortableHeader column="average" label="Costo promedio" sort={sort} onSort={changeSort}/><SortableHeader column="updated" label="Actualización" sort={sort} onSort={changeSort}/><th></th></tr></thead><tbody>{visible.map((variant)=><tr key={variant.id}><td><strong>{variant.product?.name}</strong><small>{variant.sku||"Sin SKU"}</small></td><td>{variantLabel(variant)}</td><td>{variant.product?.category?.name||"—"}</td><td><span className={variant.stock_current===0?"stock-zero":variant.stock_current<=3?"stock-low":""}>{variant.stock_current}</span></td><td>{variant.cost==null?"—":`$${Number(variant.cost).toLocaleString("es-AR")}`}</td><td>{variant.average_cost==null?"—":`$${Number(variant.average_cost).toLocaleString("es-AR",{maximumFractionDigits:2})}`}</td><td>{new Date(variant.updated_at).toLocaleString("es-AR")}</td><td><button type="button" className="button-small" onClick={()=>setAdjusting(variant)}>Ajustar</button></td></tr>)}</tbody></table></div><Pagination page={page} pageSize={pageSize} total={filtered.length} onPage={setPage} onPageSize={setPageSize}/></>}
+    <section className="movement-section"><div><p className="eyebrow">Auditoría</p><h2>Últimos movimientos</h2></div>{!movements.length?<div className="empty-state">Todavía no hay movimientos.</div>:<><div className="table-wrap"><table className="data-table movement-table"><thead><tr><SortableHeader column="date" label="Fecha" sort={movementSort} onSort={changeMovementSort}/><SortableHeader column="product" label="Producto" sort={movementSort} onSort={changeMovementSort}/><SortableHeader column="variant" label="Variante" sort={movementSort} onSort={changeMovementSort}/><SortableHeader column="type" label="Tipo" sort={movementSort} onSort={changeMovementSort}/><SortableHeader column="change" label="Cambio" sort={movementSort} onSort={changeMovementSort}/><SortableHeader column="reason" label="Motivo" sort={movementSort} onSort={changeMovementSort}/></tr></thead><tbody>{visibleMovements.map((movement)=><tr key={movement.id}><td>{new Date(movement.created_at).toLocaleString("es-AR")}</td><td>{movement.variant?.product?.name||"Producto no disponible"}</td><td>{movement.variant?variantLabel(movement.variant):"—"}</td><td>{movementLabels[movement.movement_type]||movement.movement_type}</td><td><strong className={movement.quantity_delta>0?"movement-positive":"movement-negative"}>{movement.quantity_delta>0?"+":""}{movement.quantity_delta}</strong></td><td>{movement.reason}</td></tr>)}</tbody></table></div><Pagination page={movementPage} pageSize={movementPageSize} total={sortedMovements.length} onPage={setMovementPage} onPageSize={setMovementPageSize}/></>}</section>
+    {adjusting&&<StockAdjustmentForm variant={adjusting} onCancel={()=>setAdjusting(null)} onSaved={async(newStock)=>{setAdjusting(null);setNotice(`Stock actualizado correctamente. Nuevo saldo: ${newStock}.`);await loadData();}}/>}
+  </section>;
 }

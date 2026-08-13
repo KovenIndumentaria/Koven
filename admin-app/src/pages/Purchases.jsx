@@ -1,49 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Pagination from "../components/Pagination";
 import PurchaseDetail from "../components/PurchaseDetail";
 import PurchaseDateCorrectionForm from "../components/PurchaseDateCorrectionForm";
 import PurchaseForm from "../components/PurchaseForm";
+import SortableHeader from "../components/SortableHeader";
 import { cancelPurchase, confirmPurchase, getPurchases, getPurchaseVariants, getSuppliers } from "../services/purchasesService";
-
-const labels = { draft: "Borrador", confirmed: "Confirmada", cancelled: "Cancelada" };
-const money = (value) => `$${Number(value || 0).toLocaleString("es-AR")}`;
-
-export default function Purchases() {
-  const [purchases, setPurchases] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [variants, setVariants] = useState([]);
-  const [editing, setEditing] = useState(undefined);
-  const [viewing, setViewing] = useState(null);
-  const [correcting, setCorrecting] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  async function loadData() {
-    setLoading(true); setError("");
-    try { const [nextPurchases, nextSuppliers, nextVariants] = await Promise.all([getPurchases(), getSuppliers(), getPurchaseVariants()]); setPurchases(nextPurchases); setSuppliers(nextSuppliers); setVariants(nextVariants); }
-    catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  }
-  useEffect(() => { loadData(); }, []);
-
-  async function confirm(purchase) {
-    const effect = purchase.affects_stock ? "El stock aumentará." : "Se registrará como histórica y no modificará el stock.";
-    if (!window.confirm(`¿Confirmar esta compra? ${effect} Luego no podrá editarse.`)) return;
-    try { await confirmPurchase(purchase.id); setNotice(purchase.affects_stock ? "Compra confirmada y stock actualizado correctamente." : "Compra histórica confirmada sin modificar stock."); await loadData(); }
-    catch (err) { setError(err.message); }
-  }
-  async function cancel(purchase) {
-    if (!window.confirm("¿Cancelar este borrador?")) return;
-    try { await cancelPurchase(purchase.id); setNotice("Compra cancelada."); await loadData(); }
-    catch (err) { setError(err.message); }
-  }
-
-  return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Compras</h1><p className="page-description">Ingresos de mercadería, costos y pagos a proveedores.</p></div><button className="button-primary" onClick={() => setEditing(null)} disabled={!suppliers.some((supplier) => supplier.is_active)}>Nueva compra</button></div>
-    {!suppliers.some((supplier) => supplier.is_active) && <div className="notice">Creá al menos un proveedor activo antes de registrar compras.</div>}{notice && <div className="success-notice">{notice}</div>}{error && <p className="form-error">{error}</p>}
-    {loading ? <div className="empty-state">Cargando compras…</div> : !purchases.length ? <div className="empty-state">Todavía no hay compras registradas.</div> : <div className="table-wrap section-table"><table className="data-table"><thead><tr><th>Fecha</th><th>Proveedor</th><th>Productos</th><th>Total</th><th>Estado</th><th>Notas</th><th></th></tr></thead><tbody>{purchases.map((purchase) => <tr key={purchase.id}><td>{new Date(`${purchase.purchase_date}T12:00:00`).toLocaleDateString("es-AR")}</td><td>{purchase.supplier?.name || "—"}</td><td>{purchase.items.length} línea(s)<small>{purchase.items.reduce((sum, item) => sum + item.quantity, 0)} unidades</small></td><td>{money(purchase.total_cost)}</td><td><span className={purchase.status === "confirmed" ? "tag tag-ok" : "tag"}>{labels[purchase.status]}</span></td><td>{purchase.notes || "—"}</td><td><div className="row-actions"><button onClick={() => setViewing(purchase)}>Ver detalle</button>{purchase.status === "draft" && <><button onClick={() => setEditing(purchase)}>Editar</button><button onClick={() => confirm(purchase)}>Confirmar</button><button onClick={() => cancel(purchase)}>Cancelar</button></>}</div></td></tr>)}</tbody></table></div>}
-    {editing !== undefined && <PurchaseForm purchase={editing} suppliers={suppliers} variants={variants} onCancel={() => setEditing(undefined)} onSaved={async () => { setEditing(undefined); setNotice("Borrador guardado correctamente."); await loadData(); }} />}
-    {viewing && <PurchaseDetail purchase={viewing} onClose={() => setViewing(null)} onCorrectDate={() => { setCorrecting(viewing); setViewing(null); }} />}
-    {correcting && <PurchaseDateCorrectionForm purchase={correcting} onClose={() => setCorrecting(null)} onSaved={async () => { setCorrecting(null); setNotice("Fecha histórica corregida y costos recalculados correctamente."); await loadData(); }} />}
-  </section>;
+import { compareValues, nextSort, paginate } from "../utils/tableView";
+const labels={draft:"Borrador",confirmed:"Confirmada",cancelled:"Cancelada"},money=(value)=>`$${Number(value||0).toLocaleString("es-AR")}`;
+export default function Purchases(){
+ const[purchases,setPurchases]=useState([]),[suppliers,setSuppliers]=useState([]),[variants,setVariants]=useState([]),[editing,setEditing]=useState(undefined),[viewing,setViewing]=useState(null),[correcting,setCorrecting]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
+ const[query,setQuery]=useState(""),[status,setStatus]=useState("all"),[supplierFilter,setSupplierFilter]=useState("all"),[stockMode,setStockMode]=useState("all"),[sort,setSort]=useState({column:"date",direction:"desc"}),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(25);
+ async function loadData(){setLoading(true);setError("");try{const[p,s,v]=await Promise.all([getPurchases(),getSuppliers(),getPurchaseVariants()]);setPurchases(p);setSuppliers(s);setVariants(v);}catch(err){setError(err.message);}finally{setLoading(false);}}
+ useEffect(()=>{loadData();},[]);useEffect(()=>{setPage(1);},[query,status,supplierFilter,stockMode,sort,pageSize]);
+ const filtered=useMemo(()=>purchases.filter((purchase)=>{const term=query.trim().toLowerCase();return(!term||`${purchase.supplier?.name||""} ${purchase.notes||""}`.toLowerCase().includes(term))&&(status==="all"||purchase.status===status)&&(supplierFilter==="all"||purchase.supplier_id===supplierFilter)&&(stockMode==="all"||(stockMode==="current")===purchase.affects_stock);}).sort((a,b)=>{const au=a.items.reduce((s,i)=>s+Number(i.quantity),0),bu=b.items.reduce((s,i)=>s+Number(i.quantity),0),values={date:[a.purchase_date,b.purchase_date],supplier:[a.supplier?.name,b.supplier?.name],products:[au,bu],total:[Number(a.total_cost),Number(b.total_cost)],mode:[a.affects_stock?1:0,b.affects_stock?1:0],status:[labels[a.status],labels[b.status]],notes:[a.notes,b.notes]}[sort.column];return compareValues(values?.[0],values?.[1],sort.direction)||compareValues(a.created_at,b.created_at,sort.direction);}),[purchases,query,status,supplierFilter,stockMode,sort]);
+ const visible=paginate(filtered,page,pageSize),changeSort=(column)=>setSort((current)=>nextSort(current,column,column==="date"?"desc":"asc"));
+ async function confirm(purchase){const effect=purchase.affects_stock?"El stock aumentará.":"Se registrará como histórica y no modificará el stock.";if(!window.confirm(`¿Confirmar esta compra? ${effect} Luego no podrá editarse.`))return;try{await confirmPurchase(purchase.id);setNotice(purchase.affects_stock?"Compra confirmada y stock actualizado correctamente.":"Compra histórica confirmada sin modificar stock.");await loadData();}catch(err){setError(err.message);}}
+ async function cancel(purchase){if(!window.confirm("¿Cancelar este borrador?"))return;try{await cancelPurchase(purchase.id);setNotice("Compra cancelada.");await loadData();}catch(err){setError(err.message);}}
+ return <section><div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Compras</h1><p className="page-description">Ingresos de mercadería, costos y pagos a proveedores.</p></div><button className="button-primary" onClick={()=>setEditing(null)} disabled={!suppliers.some((s)=>s.is_active)}>Nueva compra</button></div>
+ {!suppliers.some((s)=>s.is_active)&&<div className="notice">Creá al menos un proveedor activo antes de registrar compras.</div>}{notice&&<div className="success-notice">{notice}</div>}{error&&<p className="form-error">{error}</p>}
+ <div className="toolbar toolbar-purchases"><input type="search" placeholder="Buscar proveedor o notas" value={query} onChange={(e)=>setQuery(e.target.value)}/><select value={supplierFilter} onChange={(e)=>setSupplierFilter(e.target.value)}><option value="all">Todos los proveedores</option>{suppliers.map((s)=><option value={s.id} key={s.id}>{s.name}</option>)}</select><select value={status} onChange={(e)=>setStatus(e.target.value)}><option value="all">Todos los estados</option><option value="draft">Borradores</option><option value="confirmed">Confirmadas</option><option value="cancelled">Canceladas</option></select><select value={stockMode} onChange={(e)=>setStockMode(e.target.value)}><option value="all">Actuales e históricas</option><option value="current">Con ingreso de stock</option><option value="historical">Históricas</option></select><span>{filtered.length} compras</span></div>
+ {loading?<div className="empty-state">Cargando compras…</div>:!filtered.length?<div className="empty-state">No hay compras para estos filtros.</div>:<><div className="table-wrap"><table className="data-table"><thead><tr>{[["date","Fecha"],["supplier","Proveedor"],["products","Productos"],["total","Total"],["mode","Tipo"],["status","Estado"],["notes","Notas"]].map(([column,label])=><SortableHeader key={column} column={column} label={label} sort={sort} onSort={changeSort}/>) }<th></th></tr></thead><tbody>{visible.map((p)=><tr key={p.id}><td>{new Date(`${p.purchase_date}T12:00:00`).toLocaleDateString("es-AR")}</td><td>{p.supplier?.name||"—"}</td><td>{p.items.length} línea(s)<small>{p.items.reduce((s,i)=>s+i.quantity,0)} unidades</small></td><td>{money(p.total_cost)}</td><td><span className="tag">{p.affects_stock?"Actual":"Histórica"}</span></td><td><span className={p.status==="confirmed"?"tag tag-ok":"tag"}>{labels[p.status]}</span></td><td>{p.notes||"—"}</td><td><div className="row-actions"><button onClick={()=>setViewing(p)}>Ver detalle</button>{p.status==="draft"&&<><button onClick={()=>setEditing(p)}>Editar</button><button onClick={()=>confirm(p)}>Confirmar</button><button onClick={()=>cancel(p)}>Cancelar</button></>}</div></td></tr>)}</tbody></table></div><Pagination page={page} pageSize={pageSize} total={filtered.length} onPage={setPage} onPageSize={setPageSize}/></>}
+ {editing!==undefined&&<PurchaseForm purchase={editing} suppliers={suppliers} variants={variants} onCancel={()=>setEditing(undefined)} onSaved={async()=>{setEditing(undefined);setNotice("Borrador guardado correctamente.");await loadData();}}/>}{viewing&&<PurchaseDetail purchase={viewing} onClose={()=>setViewing(null)} onCorrectDate={()=>{setCorrecting(viewing);setViewing(null);}}/>}{correcting&&<PurchaseDateCorrectionForm purchase={correcting} onClose={()=>setCorrecting(null)} onSaved={async()=>{setCorrecting(null);setNotice("Fecha histórica corregida y costos recalculados correctamente.");await loadData();}}/>}
+ </section>;
 }

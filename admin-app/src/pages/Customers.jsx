@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import Pagination from "../components/Pagination";
 import SortableHeader from "../components/SortableHeader";
 import { getCustomers, updateCustomer } from "../services/customersService";
 import { compareValues, nextSort, paginate } from "../utils/tableView";
+import { downloadCsv } from "../utils/exportData";
 
 const saleStatuses = new Set(["confirmed", "preparing", "ready", "delivered"]);
 const money = (value) => `$${Number(value || 0).toLocaleString("es-AR")}`;
@@ -44,6 +46,7 @@ export default function Customers() {
     }).sort((a,b) => { const am=customerMetrics(a),bm=customerMetrics(b); const values={name:[a.name,b.name],contact:[a.phone,b.phone],orders:[am.orders,bm.orders],spent:[am.spent,bm.spent],last:[am.lastOrder?.created_at,bm.lastOrder?.created_at]}[sort.column]; return compareValues(values?.[0],values?.[1],sort.direction); });
   }, [customers, query, purchaseFilter, sort]);
   const visible=paginate(filtered,page,pageSize),changeSort=(column)=>setSort((current)=>nextSort(current,column,column==="last"?"desc":"asc"));
+  const exportCsv=()=>downloadCsv(`koven-clientes-${new Date().toISOString().slice(0,10)}`,["Cliente","Teléfono","Email","Dirección","Compras","Total comprado","Última compra","Notas"],filtered.map((customer)=>{const metrics=customerMetrics(customer);return[customer.name,customer.phone,customer.email||"",customer.address||"",metrics.orders,metrics.spent,metrics.lastOrder?.created_at?new Date(metrics.lastOrder.created_at).toLocaleString("es-AR"):"",customer.notes||""];}));
 
   async function save(event) {
     event.preventDefault();
@@ -57,7 +60,7 @@ export default function Customers() {
   }
 
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Clientes</h1><p className="page-description">Contactos, historial de compras y valor acumulado por cliente.</p></div><button className="button-secondary" onClick={load}>Actualizar</button></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Clientes</h1><p className="page-description">Contactos, historial de compras y valor acumulado por cliente.</p></div><div className="header-actions"><ExportActions onCsv={exportCsv} disabled={!filtered.length}/><button className="button-secondary" onClick={load}>Actualizar</button></div></div>
     {notice && <div className="success-notice">{notice}</div>}{error && <p className="form-error">{error}</p>}
     <div className="toolbar customer-toolbar"><input placeholder="Buscar por nombre, teléfono o email" value={query} onChange={(e) => setQuery(e.target.value)} /><select value={purchaseFilter} onChange={(e)=>setPurchaseFilter(e.target.value)}><option value="all">Todos los clientes</option><option value="with">Con compras</option><option value="without">Sin compras</option></select><span>{filtered.length} clientes</span></div>
     {loading ? <div className="empty-state">Cargando clientes…</div> : !filtered.length ? <div className="empty-state">Todavía no hay clientes para mostrar.</div> :

@@ -18,11 +18,13 @@ const Payables = lazy(() => import("./pages/Payables"));
 const Audit = lazy(() => import("./pages/Audit"));
 const Activity = lazy(() => import("./pages/Activity"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Alerts = lazy(() => import("./pages/Alerts"));
 
 import { useAuth } from "./context/AuthContext";
 
 const pages = {
   "/": ["Resumen", "Estado general de la tienda y alertas principales."],
+  "/alertas": ["Alertas", "Pendientes operativos de la tienda."],
   "/productos": ["Productos", "Productos, variantes e imágenes."],
   "/stock": ["Stock", "Existencias y movimientos por variante."],
   "/proveedores": ["Proveedores", "Datos básicos de proveedores."],
@@ -45,7 +47,7 @@ function getPath() {
 }
 
 export default function App() {
-  const { configured, loading, session, isAdmin, signOut } = useAuth();
+  const { configured, loading, session, isAdmin, isPasswordRecovery, signOut } = useAuth();
   const [path, setPath] = useState(getPath);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  if (!configured || (!loading && !session)) return <Login />;
+  if (!configured || isPasswordRecovery || (!loading && !session)) return <Login />;
   if (loading) return <div className="screen-message">Verificando sesión…</div>;
   if (!isAdmin) {
     return (
@@ -71,7 +73,7 @@ export default function App() {
   const [title, description] = pages[path] || pages["/"];
   return (
     <AdminLayout currentPath={path}>
-      <Suspense fallback={<div className="empty-state">Cargando sección…</div>}>{path === "/" ? <Dashboard /> : path === "/productos" ? <Products /> : path === "/stock" ? <Stock /> : path === "/proveedores" ? <Suppliers /> : path === "/compras" ? <Purchases /> : path === "/pedidos" ? <Orders /> : path === "/saldos" ? <Receivables /> : path === "/ventas/nueva" ? <NewSale /> : path === "/clientes" ? <Customers /> : path === "/finanzas" ? <Finance /> : path === "/cuentas-pagar" ? <Payables /> : path === "/gastos" ? <Expenses /> : path === "/reportes" ? <Reports /> : path === "/control" ? <Audit /> : path === "/actividad" ? <Activity /> : path === "/configuracion" ? <Settings /> : <PlaceholderPage title={title} description={description} />}</Suspense>
+      <Suspense fallback={<div className="empty-state">Cargando sección…</div>}>{path === "/" ? <Dashboard /> : path === "/alertas" ? <Alerts /> : path === "/productos" ? <Products /> : path === "/stock" ? <Stock /> : path === "/proveedores" ? <Suppliers /> : path === "/compras" ? <Purchases /> : path === "/pedidos" ? <Orders /> : path === "/saldos" ? <Receivables /> : path === "/ventas/nueva" ? <NewSale /> : path === "/clientes" ? <Customers /> : path === "/finanzas" ? <Finance /> : path === "/cuentas-pagar" ? <Payables /> : path === "/gastos" ? <Expenses /> : path === "/reportes" ? <Reports /> : path === "/control" ? <Audit /> : path === "/actividad" ? <Activity /> : path === "/configuracion" ? <Settings /> : <PlaceholderPage title={title} description={description} />}</Suspense>
     </AdminLayout>
   );
 }

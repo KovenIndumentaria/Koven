@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import MetricCard from "../components/MetricCard";
 import Pagination from "../components/Pagination";
 import OrderPaymentForm from "../components/OrderPaymentForm";
@@ -9,6 +10,7 @@ import { advanceOrder, cancelOrder, confirmOrder, deleteOrderPayment, getAdjustm
 import { getOrderAccount } from "../utils/orderAccount";
 import { newestDatedFirst } from "../utils/dateSort";
 import { compareValues, paginate } from "../utils/tableView";
+import { downloadCsv } from "../utils/exportData";
 
 const labels = { pending_confirmation: "Pendiente", confirmed: "Confirmado", preparing: "Preparando", ready: "Listo", delivered: "Entregado", cancelled: "Cancelado" };
 const methods = { cash: "Efectivo", transfer: "Transferencia", card: "Tarjeta", other: "Otro" };
@@ -55,9 +57,10 @@ export default function Orders() {
   const pending = enriched.filter((order) => order.status === "pending_confirmation").length;
   const processing = enriched.filter((order) => ["confirmed", "preparing", "ready"].includes(order.status)).length;
   const receivable = enriched.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + order.balance, 0);
+  const exportCsv=()=>downloadCsv(`koven-pedidos-${new Date().toISOString().slice(0,10)}`,["Pedido","Fecha","Cliente","Teléfono","Entrega","Total actualizado","Pagado neto","Saldo","Reintegro pendiente","Estado","Estado de pago","Histórico"],filtered.map((order)=>[order.order_number,new Date(order.created_at).toLocaleString("es-AR"),order.customer_name,order.customer_phone,order.delivery_type==="pickup"?"Retiro":"Envío",order.accountTotal,order.paid,order.balance,order.refundDue,order.fullyReturned?"Devuelto":labels[order.status],order.refundDue>0?"Reintegro pendiente":order.balance>0?order.paid>0?"Pago parcial":"Pago pendiente":"Saldado",order.affects_stock?"No":"Sí"]));
 
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Pedidos</h1><p className="page-description">Gestión de ventas, entregas, pagos, cambios y devoluciones.</p></div><div className="header-actions"><a className="button-primary" href="#/ventas/nueva">Cargar venta</a><button className="button-secondary" onClick={load}>Actualizar</button></div></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Pedidos</h1><p className="page-description">Gestión de ventas, entregas, pagos, cambios y devoluciones.</p></div><div className="header-actions"><ExportActions onCsv={exportCsv} disabled={!filtered.length}/><a className="button-primary" href="#/ventas/nueva">Cargar venta</a><button className="button-secondary" onClick={load}>Actualizar</button></div></div>
     {notice && <div className="success-notice">{notice}</div>}{error && <p className="form-error">{error}</p>}
     <div className="metrics-grid order-metrics"><MetricCard label="Por confirmar" value={pending} /><MetricCard label="En proceso" value={processing} /><MetricCard label="Saldo pendiente" value={money(receivable)} /><MetricCard label="Entregados" value={enriched.filter((order) => order.status === "delivered").length} /></div>
     <div className="toolbar orders-toolbar"><input type="search" placeholder="Buscar cliente, teléfono o pedido" value={query} onChange={(event) => setQuery(event.target.value)} /><select value={filter} onChange={(event) => setFilter(event.target.value)}><option value="active">Pedidos activos</option><option value="pending">Por confirmar</option><option value="preparing">En preparación</option><option value="unpaid">Con saldo pendiente</option><option value="returned">Devueltos</option><option value="completed">Entregados</option><option value="cancelled">Cancelados</option><option value="all">Todos</option></select><select value={orderBy} onChange={(event)=>setOrderBy(event.target.value)}><option value="newest">Más recientes</option><option value="oldest">Más antiguos</option><option value="customer">Cliente A–Z</option><option value="total_desc">Mayor total</option><option value="total_asc">Menor total</option><option value="balance_desc">Mayor saldo</option></select><span>{filtered.length} pedidos</span></div>

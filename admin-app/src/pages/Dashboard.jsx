@@ -37,7 +37,7 @@ export default function Dashboard() {
     {error && <p className="form-error">{error}</p>}
     {loading || !state ? <div className="empty-state">Cargando resumen…</div> : <>
       <section className="dashboard-priority">
-        <div className="section-title"><div><p className="eyebrow">Atención</p><h2>Pendientes operativos</h2></div><a href="#/control">Ver control completo</a></div>
+        <div className="section-title"><div><p className="eyebrow">Atención</p><h2>Pendientes operativos</h2></div><a href="#/alertas">Ver todas las alertas</a></div>
         <div className="dashboard-attention-grid">
           <a href="#/pedidos" className={m.pendingOrders ? "attention-card attention-active" : "attention-card"}><span>Pedidos por confirmar</span><strong>{m.pendingOrders}</strong><small>{m.pendingOrders ? "Requieren una decisión" : "Sin pedidos pendientes"}</small></a>
           <a href="#/saldos" className={state.operations.customerDebt ? "attention-card attention-active" : "attention-card"}><span>Clientes deben</span><strong>{money(state.operations.customerDebt)}</strong><small>Saldo total por cobrar</small></a>

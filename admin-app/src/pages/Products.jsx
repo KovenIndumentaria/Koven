@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import Pagination from "../components/Pagination";
 import ProductForm from "../components/ProductForm";
 import SortableHeader from "../components/SortableHeader";
 import { getCategories, getProducts, setProductActive } from "../services/productsService";
 import { compareValues, nextSort, paginate } from "../utils/tableView";
+import { downloadCsv } from "../utils/exportData";
 
 function productValues(product) {
   const activeVariants = product.variants?.filter((variant) => variant.is_active) || [];
@@ -44,10 +46,11 @@ export default function Products() {
 
   const visible = paginate(filtered, page, pageSize);
   const changeSort = (column) => setSort((current) => nextSort(current, column));
+  const exportCsv = () => downloadCsv(`koven-productos-${new Date().toISOString().slice(0, 10)}`, ["Producto", "Categoría", "Precio de venta", "Costo de referencia", "Variantes activas", "Stock", "Imágenes", "Estado"], filtered.map((product) => { const values = productValues(product); return [product.name, product.category?.name || "Sin categoría", product.sale_price, values.cost ?? "", values.variants, values.stock, values.images, product.is_active ? "Activo" : "Archivado"]; }));
   async function toggleActive(product) { try { await setProductActive(product.id, !product.is_active); await loadData(); } catch (e) { setError(e.message || "No se pudo cambiar el estado."); } }
 
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Productos</h1><p className="page-description">Productos, precios, variantes e imágenes publicados desde Supabase.</p></div><div className="header-actions"><button className="button-primary" type="button" onClick={() => setEditing(null)}>Nuevo producto</button></div></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Productos</h1><p className="page-description">Productos, precios, variantes e imágenes publicados desde Supabase.</p></div><div className="header-actions"><ExportActions onCsv={exportCsv} disabled={!filtered.length}/><button className="button-primary" type="button" onClick={() => setEditing(null)}>Nuevo producto</button></div></div>
     {notice && <div className="success-notice">{notice}</div>}{error && <p className="form-error" role="alert">{error}</p>}
     <div className="toolbar toolbar-products"><input type="search" placeholder="Buscar por nombre o ID anterior" value={query} onChange={(e) => setQuery(e.target.value)} /><select aria-label="Filtrar estado" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Todos los estados</option><option value="active">Activos</option><option value="inactive">Archivados</option></select><select aria-label="Filtrar imágenes" value={imageFilter} onChange={(e) => setImageFilter(e.target.value)}><option value="all">Todas las imágenes</option><option value="without">Imagen pendiente</option><option value="with">Con imagen</option></select><select aria-label="Filtrar costos" value={costFilter} onChange={(e) => setCostFilter(e.target.value)}><option value="all">Todos los costos</option><option value="without">Costo pendiente</option><option value="with">Con costo</option></select><span>{filtered.length} productos</span></div>
     {loading ? <div className="empty-state">Cargando productos…</div> : !filtered.length ? <div className="empty-state"><h2>No hay productos para estos filtros</h2><p>Probá cambiando la búsqueda o los filtros seleccionados.</p></div> : <>

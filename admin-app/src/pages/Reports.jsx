@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import MetricCard from "../components/MetricCard";
 import { calculateMetrics, getReportData } from "../services/reportsService";
+import { downloadCsv, printTable } from "../utils/exportData";
 
 const money = (value) => `$${Math.round(value || 0).toLocaleString("es-AR")}`;
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => `${today().slice(0, 8)}01`;
-const csvCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
 
 export default function Reports() {
   const [data, setData] = useState(null);
@@ -20,19 +21,21 @@ export default function Reports() {
 
   function exportCsv() {
     if (!m || invalidRange) return;
-    const rows = [
-      ["REPORTE KOVEN"], ["Desde", m.from || "Inicio"], ["Hasta", m.to || "Hoy"], [],
-      ["RESUMEN", "Importe"], ["Ventas netas", m.revenue], ["Costo vendido conocido", m.knownCost], ["Ganancia bruta", m.grossMargin], ["Gastos operativos", m.expenseCost], ["Resultado neto operativo", m.operatingResult], ["Cobrado en el período", m.collected], ["Saldo por cobrar actual", m.outstanding], ["Cobertura de costos", `${Math.round(m.costCoverage * 100)}%`], [],
-      ["PRODUCTOS", "Unidades netas", "Ventas", "Costo conocido", "Ganancia conocida", "Unidades con costo"],
+    downloadCsv(`koven-reporte-${m.from || "inicio"}-${m.to || "hoy"}`, ["REPORTE KOVEN", "Detalle", "Valor", "", "", ""], [
+      ["Período", "Desde", m.from || "Inicio"], ["Período", "Hasta", m.to || "Hoy"],
+      ["Resumen", "Ventas netas", m.revenue], ["Resumen", "Costo vendido conocido", m.knownCost], ["Resumen", "Ganancia bruta", m.grossMargin], ["Resumen", "Gastos operativos", m.expenseCost], ["Resumen", "Resultado neto operativo", m.operatingResult], ["Resumen", "Cobrado en el período", m.collected], ["Resumen", "Saldo por cobrar actual", m.outstanding], ["Resumen", "Cobertura de costos", `${Math.round(m.costCoverage * 100)}%`],
+      [], ["PRODUCTOS", "Unidades netas", "Ventas", "Costo conocido", "Ganancia conocida", "Unidades con costo"],
       ...m.productRows.map((product) => [product.name, product.quantity, product.revenue, product.cost, product.margin, product.costUnits]),
-    ];
-    const content = `\uFEFF${rows.map((row) => row.map(csvCell).join(";")).join("\r\n")}`;
-    const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = `koven-reporte-${m.from || "inicio"}-${m.to || "hoy"}.csv`; link.click(); URL.revokeObjectURL(url);
+    ]);
+  }
+
+  function exportPdf() {
+    if (!m || invalidRange) return;
+    printTable({title:"Reporte de rentabilidad",subtitle:`Desde ${m.from || "el inicio"} hasta ${m.to || "hoy"} · ${m.orders} pedidos`,headers:["Producto","Unidades","Ventas","Costo conocido","Ganancia","Unidades con costo"],rows:m.productRows.map((product)=>[product.name,product.quantity,money(product.revenue),money(product.cost),money(product.margin),product.costUnits]),summary:[["Ventas netas",money(m.revenue)],["Costo conocido",money(m.knownCost)],["Ganancia bruta",money(m.grossMargin)],["Resultado operativo",money(m.operatingResult)],["Cobrado",money(m.collected)],["Saldo por cobrar",money(m.outstanding)],["Gastos",money(m.expenseCost)],["Cobertura de costos",`${Math.round(m.costCoverage*100)}%`]]});
   }
 
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Reportes</h1><p className="page-description">Rentabilidad de las ventas, gastos y estado del inventario.</p></div><div className="header-actions"><select className="period-select" value={days} onChange={(event) => setDays(event.target.value)}><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="365">Último año</option><option value="custom">Elegir fechas</option><option value="all">Todo el historial</option></select><button className="button-secondary" onClick={load}>Actualizar</button><button className="button-primary" onClick={exportCsv} disabled={!m || invalidRange}>Exportar CSV</button></div></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Reportes</h1><p className="page-description">Rentabilidad de las ventas, gastos y estado del inventario.</p></div><div className="header-actions"><select className="period-select" value={days} onChange={(event) => setDays(event.target.value)}><option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="365">Último año</option><option value="custom">Elegir fechas</option><option value="all">Todo el historial</option></select><button className="button-secondary" onClick={load}>Actualizar</button><ExportActions onCsv={exportCsv} onPdf={exportPdf} disabled={!m || invalidRange}/></div></div>
     {days === "custom" && <div className="report-date-range"><label className="field">Desde<input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(event) => setCustomRange({ ...customRange, from: event.target.value })} /></label><label className="field">Hasta<input type="date" value={customRange.to} min={customRange.from || undefined} max={today()} onChange={(event) => setCustomRange({ ...customRange, to: event.target.value })} /></label>{invalidRange && <p className="form-error">La fecha inicial debe ser anterior o igual a la fecha final.</p>}</div>}
     {error && <p className="form-error">{error}</p>}
     {loading || !m || invalidRange ? <div className="empty-state">{invalidRange ? "Seleccioná un rango de fechas válido." : "Calculando reportes…"}</div> : <>

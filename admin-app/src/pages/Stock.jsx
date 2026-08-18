@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import Pagination from "../components/Pagination";
 import SortableHeader from "../components/SortableHeader";
 import StockAdjustmentForm from "../components/StockAdjustmentForm";
 import { getInventory, getStockMovements } from "../services/stockService";
 import { compareValues, nextSort, paginate } from "../utils/tableView";
+import { downloadCsv } from "../utils/exportData";
 
 const movementLabels={adjustment:"Ajuste",purchase:"Compra",sale:"Venta",reversal:"Reversión"};
 const variantLabel=(variant)=>[variant.color_name,variant.size].filter(Boolean).join(" · ")||"Variante única";
@@ -26,8 +28,9 @@ export default function Stock(){
   const sortedMovements=useMemo(()=>[...movements].sort((a,b)=>{const values={date:[a.created_at,b.created_at],product:[a.variant?.product?.name,b.variant?.product?.name],variant:[a.variant?variantLabel(a.variant):null,b.variant?variantLabel(b.variant):null],type:[movementLabels[a.movement_type],movementLabels[b.movement_type]],change:[Number(a.quantity_delta),Number(b.quantity_delta)],reason:[a.reason,b.reason]}[movementSort.column];return compareValues(values?.[0],values?.[1],movementSort.direction);}),[movements,movementSort]);
   const visible=paginate(filtered,page,pageSize),visibleMovements=paginate(sortedMovements,movementPage,movementPageSize);
   const changeSort=(column)=>setSort((current)=>nextSort(current,column,column==="updated"?"desc":"asc")),changeMovementSort=(column)=>setMovementSort((current)=>nextSort(current,column,column==="date"?"desc":"asc"));
+  const exportCsv=()=>downloadCsv(`koven-stock-${new Date().toISOString().slice(0,10)}`,["Producto","Variante","SKU","Categoría","Stock","Último costo","Costo promedio","Estado","Actualización"],filtered.map((variant)=>[variant.product?.name,variantLabel(variant),variant.sku||"",variant.product?.category?.name||"",variant.stock_current,variant.cost??"",variant.average_cost??"",variant.is_active&&variant.product?.is_active?"Activo":"Archivado",new Date(variant.updated_at).toLocaleString("es-AR")]));
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Stock</h1><p className="page-description">Existencias por variante y trazabilidad de cada cambio.</p></div><button type="button" className="button-secondary" onClick={loadData}>Actualizar</button></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Stock</h1><p className="page-description">Existencias por variante y trazabilidad de cada cambio.</p></div><div className="header-actions"><ExportActions onCsv={exportCsv} disabled={!filtered.length}/><button type="button" className="button-secondary" onClick={loadData}>Actualizar</button></div></div>
     {notice&&<div className="success-notice">{notice}</div>}{error&&<p className="form-error" role="alert">{error}</p>}
     <div className="summary-grid"><article><span>Variantes activas</span><strong>{summary.variants}</strong></article><article><span>Unidades totales</span><strong>{summary.units}</strong></article><article><span>Stock bajo</span><strong>{summary.low}</strong></article><article><span>Sin stock</span><strong>{summary.zero}</strong></article></div>
     <div className="toolbar toolbar-stock"><input type="search" placeholder="Buscar producto, color, talle o SKU" value={query} onChange={(event)=>setQuery(event.target.value)}/><select value={stockFilter} onChange={(event)=>setStockFilter(event.target.value)}><option value="all">Todo el stock</option><option value="zero">Sin stock</option><option value="low">Stock bajo (1–3)</option><option value="healthy">Más de 3</option></select><select value={costFilter} onChange={(event)=>setCostFilter(event.target.value)}><option value="all">Todos los costos</option><option value="without">Costo pendiente</option><option value="with">Con costo</option></select><select value={visibility} onChange={(event)=>setVisibility(event.target.value)}><option value="active">Activos</option><option value="inactive">Archivados</option><option value="all">Todos</option></select><select value={category} onChange={(event)=>setCategory(event.target.value)}><option value="all">Todas las categorías</option>{categories.map((name)=><option key={name}>{name}</option>)}</select><span>{filtered.length} variantes</span></div>

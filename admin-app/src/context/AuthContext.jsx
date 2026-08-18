@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const verifiedUserId = useRef(null);
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") setIsPasswordRecovery(true);
       if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
         setSession(nextSession);
         return;
@@ -55,11 +57,15 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session,
     isAdmin,
+    isPasswordRecovery,
     loading,
     configured: isSupabaseConfigured,
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    requestPasswordReset: (email) => supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/` }),
+    updatePassword: (password) => supabase.auth.updateUser({ password }),
+    finishPasswordRecovery: () => setIsPasswordRecovery(false),
     signOut: () => supabase.auth.signOut(),
-  }), [session, isAdmin, loading]);
+  }), [session, isAdmin, isPasswordRecovery, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

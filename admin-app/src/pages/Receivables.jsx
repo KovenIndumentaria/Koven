@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ExportActions from "../components/ExportActions";
 import MetricCard from "../components/MetricCard";
 import OrderPaymentForm from "../components/OrderPaymentForm";
 import Pagination from "../components/Pagination";
@@ -6,6 +7,7 @@ import SortableHeader from "../components/SortableHeader";
 import { getOrders } from "../services/ordersService";
 import { getOrderAccount } from "../utils/orderAccount";
 import { compareValues, nextSort, paginate } from "../utils/tableView";
+import { downloadCsv } from "../utils/exportData";
 
 const money=(value)=>`$${Number(value||0).toLocaleString("es-AR")}`, dayMs=86400000;
 function paymentSummary(order){const account=getOrderAccount(order);return{...account,age:Math.max(0,Math.floor((Date.now()-new Date(`${order.sale_date}T12:00:00`).getTime())/dayMs))};}
@@ -18,9 +20,10 @@ export default function Receivables(){
   const rows=useMemo(()=>orders.map((order)=>({order,...paymentSummary(order)})),[orders]);
   const filtered=useMemo(()=>{const term=query.trim().toLowerCase();return rows.filter((row)=>{const search=!term||row.order.customer_name.toLowerCase().includes(term)||row.order.customer_phone.includes(term)||String(row.order.order_number).includes(term);const status=filter==="all"||(filter==="pending"&&row.balance>0)||(filter==="partial"&&row.paid>0&&row.balance>0)||(filter==="paid"&&row.balance===0);return search&&status;}).sort((a,b)=>{const values={order:[a.order.order_number,b.order.order_number],customer:[a.order.customer_name,b.order.customer_name],date:[a.order.sale_date,b.order.sale_date],total:[a.accountTotal,b.accountTotal],paid:[a.paid,b.paid],balance:[a.balance,b.balance],age:[a.age,b.age]}[sort.column];return compareValues(values?.[0],values?.[1],sort.direction);});},[rows,query,filter,sort]);
   const visible=paginate(filtered,page,pageSize),changeSort=(column)=>setSort((current)=>nextSort(current,column,column==="date"?"desc":"asc"));
+  const exportCsv=()=>downloadCsv(`koven-saldos-clientes-${new Date().toISOString().slice(0,10)}`,["Pedido","Cliente","Teléfono","Fecha","Total actualizado","Cobrado","Saldo","Antigüedad en días"],filtered.map((row)=>[row.order.order_number,row.order.customer_name,row.order.customer_phone,row.order.sale_date,row.accountTotal,row.paid,row.balance,row.age]));
   const totalBilled=rows.reduce((sum,row)=>sum+row.accountTotal,0),totalPaid=rows.reduce((sum,row)=>sum+row.paid,0),totalBalance=rows.reduce((sum,row)=>sum+row.balance,0),overdue=rows.filter((row)=>row.balance>0&&row.age>=30).reduce((sum,row)=>sum+row.balance,0);
   return <section>
-    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Saldos y cobros</h1><p className="page-description">Seguimiento centralizado de pagos parciales, cambios y dinero pendiente.</p></div><button className="button-secondary" onClick={load}>Actualizar</button></div>
+    <div className="page-header"><div><p className="eyebrow">Panel administrativo</p><h1>Saldos y cobros</h1><p className="page-description">Seguimiento centralizado de pagos parciales, cambios y dinero pendiente.</p></div><div className="header-actions"><ExportActions onCsv={exportCsv} disabled={!filtered.length}/><button className="button-secondary" onClick={load}>Actualizar</button></div></div>
     {notice&&<div className="success-notice">{notice}</div>}{error&&<p className="form-error">{error}</p>}
     <div className="metrics-grid"><MetricCard label="Ventas actualizadas" value={money(totalBilled)}/><MetricCard label="Total cobrado" value={money(totalPaid)}/><MetricCard label="Saldo pendiente" value={money(totalBalance)}/><MetricCard label="Pendiente +30 días" value={money(overdue)}/></div>
     <div className="toolbar receivables-toolbar"><input placeholder="Buscar cliente, teléfono o pedido" value={query} onChange={(event)=>setQuery(event.target.value)}/><select value={filter} onChange={(event)=>setFilter(event.target.value)}><option value="pending">Con saldo pendiente</option><option value="partial">Pagos parciales</option><option value="paid">Pagados</option><option value="all">Todos</option></select><span>{filtered.length} pedidos</span></div>

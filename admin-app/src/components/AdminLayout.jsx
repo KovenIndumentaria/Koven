@@ -4,6 +4,7 @@ import { getAlertCount } from "../services/alertsService";
 import useOrderNotifications from "../hooks/useOrderNotifications";
 import { OrderNotificationsContext } from "../context/OrderNotificationsContext";
 import kovenLogo from "../../../assets/img/logo-koven-white.svg";
+import developerMark from "../../../assets/img/mauricio-salinas-mark-dark.svg";
 import reportsIcon from "../../../assets/icons/reports.svg";
 import cashRegisterIcon from "../../../assets/icons/cash-register.svg";
 import orderPendingIcon from "../../../assets/icons/order-pending.svg";
@@ -91,7 +92,7 @@ export default function AdminLayout({ currentPath, children }) {
           <button type="button" onClick={signOut}><img src={logoutIcon} alt="" aria-hidden="true" />Cerrar sesión</button>
         </div>
       </aside>
-      <main className="admin-content"><OrderNotificationsContext.Provider value={{ soundEnabled, toggleSound }}>{children}</OrderNotificationsContext.Provider></main>
+      <main className="admin-content"><OrderNotificationsContext.Provider value={{ soundEnabled, toggleSound }}>{children}</OrderNotificationsContext.Provider><footer className="admin-footer"><a className="admin-developer-credit" href="https://mauricio-salinas.netlify.app/"><img src={developerMark} width="16" height="17" alt="" aria-hidden="true" /><span>Diseñado y desarrollado por Mauricio Salinas ↗</span></a></footer></main>
       {toast && <div className="order-toast" role="status" aria-live="polite"><div><strong>Nuevo pedido</strong><p>{toast}</p><a href="#/pedidos" onClick={dismissToast}>Ver pedidos</a></div><button type="button" aria-label="Cerrar aviso" onClick={dismissToast}>×</button></div>}
     </div>
   );

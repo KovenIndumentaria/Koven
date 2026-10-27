@@ -1830,7 +1830,30 @@ button:disabled {
 .footer-legal {
   padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
 }
+
+.developer-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  color: #b8b8b8;
+  font: inherit;
+  text-decoration: none;
+}
+.footer-legal .developer-credit span {
+  color: inherit;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.developer-credit img { width: 18px; height: auto; flex: 0 0 18px; }
+.developer-credit:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+.developer-credit:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
 
 .contador.animar {
   animation: pop 0.3s ease;

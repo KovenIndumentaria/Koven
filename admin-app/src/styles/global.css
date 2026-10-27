@@ -51,7 +51,12 @@ button { cursor: pointer; }
 .session-box > span { color: #777; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; }
 .session-box small { color: #ddd; font-weight: 600; }
 .session-box button { border: 1px solid #555; }
-.admin-content { min-width: 0; padding: clamp(28px, 5vw, 72px); }
+.admin-content { min-width: 0; padding: clamp(28px, 5vw, 72px); display: flex; flex-direction: column; }
+.admin-footer { margin-top: auto; padding-top: 40px; }
+.admin-developer-credit { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; color: #666; font-size: 10px; line-height: 1.7; text-decoration: none; }
+.admin-developer-credit img { width: 16px; height: auto; flex: 0 0 16px; }
+.admin-developer-credit:hover { color: #151515; text-decoration: underline; text-underline-offset: 4px; }
+.admin-developer-credit:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
 .admin-content h2, .admin-content h3 { margin: 0; }
 .page-description { max-width: 650px; color: #555; }
 .empty-state { margin-top: 40px; padding: 40px; border: 1px dashed #aaa; background: #fff; }

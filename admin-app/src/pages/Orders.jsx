@@ -48,14 +48,19 @@ export default function Orders() {
   const [page, setPage] = useState(1), [pageSize, setPageSize] = useState(25);
   async function load() { setLoading(true); setError(""); try { const [nextOrders, nextVariants] = await Promise.all([getOrders(), getAdjustmentVariants()]); setOrders(nextOrders); setVariants(nextVariants); } catch (err) { setError(err.message); } finally { setLoading(false); } }
   useEffect(() => { load(); }, []);
-  async function action(callback, message) { setError(""); try { await callback(); setNotice(message); await load(); } catch (err) { setError(err.message); } }
+  async function action(callback, message) { setError(""); try { await callback(); setNotice(message); window.dispatchEvent(new Event("koven:orders-updated")); await load(); } catch (err) { setError(err.message); } }
+  useEffect(() => {
+    const refresh = () => load();
+    window.addEventListener("koven:new-orders", refresh);
+    return () => window.removeEventListener("koven:new-orders", refresh);
+  }, []);
 
   const enriched = useMemo(() => orders.map((order) => { const account=getOrderAccount(order); return { ...order, ...account, fullyReturned: account.currentItems.length===0 && (order.adjustments?.length||0)>0 }; }), [orders]);
   useEffect(() => { setPage(1); }, [query, filter, orderBy, pageSize]);
   const filtered = useMemo(() => { const term = query.trim().toLowerCase(); return enriched.filter((order) => { const search = !term || `${order.order_number} ${order.customer_name} ${order.customer_phone}`.toLowerCase().includes(term); const active = order.status !== "cancelled" && (order.refundDue > 0 || (!order.fullyReturned && order.status !== "delivered")); const status = filter === "all" || (filter === "active" && active) || (filter === "pending" && order.status === "pending_confirmation") || (filter === "preparing" && !order.fullyReturned && ["confirmed", "preparing", "ready"].includes(order.status)) || (filter === "unpaid" && order.balance > 0 && order.status !== "cancelled") || (filter === "returned" && order.fullyReturned) || (filter === "completed" && order.status === "delivered" && !order.fullyReturned) || (filter === "cancelled" && order.status === "cancelled"); return search && status; }).sort((a,b)=>{if(orderBy==="newest")return compareValues(a.created_at,b.created_at,"desc");if(orderBy==="oldest")return compareValues(a.created_at,b.created_at,"asc");if(orderBy==="customer")return compareValues(a.customer_name,b.customer_name,"asc");if(orderBy==="total_desc")return compareValues(a.accountTotal,b.accountTotal,"desc");if(orderBy==="total_asc")return compareValues(a.accountTotal,b.accountTotal,"asc");return compareValues(a.balance,b.balance,"desc");}); }, [enriched, query, filter, orderBy]);
   const visible = paginate(filtered, page, pageSize);
   const pending = enriched.filter((order) => order.status === "pending_confirmation").length;
-  const processing = enriched.filter((order) => ["confirmed", "preparing", "ready"].includes(order.status)).length;
+  const processing = enriched.filter((order) => !order.fullyReturned && ["confirmed", "preparing", "ready"].includes(order.status)).length;
   const receivable = enriched.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + order.balance, 0);
   const exportCsv=()=>downloadCsv(`koven-pedidos-${new Date().toISOString().slice(0,10)}`,["Pedido","Fecha","Cliente","Teléfono","Entrega","Total actualizado","Pagado neto","Saldo","Reintegro pendiente","Estado","Estado de pago","Histórico"],filtered.map((order)=>[order.order_number,new Date(order.created_at).toLocaleString("es-AR"),order.customer_name,order.customer_phone,order.delivery_type==="pickup"?"Retiro":"Envío",order.accountTotal,order.paid,order.balance,order.refundDue,order.fullyReturned?"Devuelto":labels[order.status],order.refundDue>0?"Reintegro pendiente":order.balance>0?order.paid>0?"Pago parcial":"Pago pendiente":"Saldado",order.affects_stock?"No":"Sí"]));
 

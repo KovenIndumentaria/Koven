@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { getAlertCount } from "../services/alertsService";
+import useOrderNotifications from "../hooks/useOrderNotifications";
+import { OrderNotificationsContext } from "../context/OrderNotificationsContext";
 import kovenLogo from "../../../assets/img/logo-koven-white.svg";
 import reportsIcon from "../../../assets/icons/reports.svg";
 import cashRegisterIcon from "../../../assets/icons/cash-register.svg";
@@ -51,7 +53,15 @@ export default function AdminLayout({ currentPath, children }) {
   const { session, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
-  useEffect(() => { getAlertCount().then(setAlertCount).catch(() => setAlertCount(0)); }, [currentPath]);
+  const { pendingCount, toast, dismissToast, soundEnabled, toggleSound, error } = useOrderNotifications(currentPath);
+  useEffect(() => {
+    let disposed = false;
+    const refresh = () => getAlertCount().then((count) => { if (!disposed) setAlertCount(count); }).catch(() => {});
+    refresh();
+    window.addEventListener("koven:new-orders", refresh);
+    window.addEventListener("koven:orders-updated", refresh);
+    return () => { disposed = true; window.removeEventListener("koven:new-orders", refresh); window.removeEventListener("koven:orders-updated", refresh); };
+  }, [currentPath]);
 
   return (
     <div className="admin-shell">
@@ -69,17 +79,20 @@ export default function AdminLayout({ currentPath, children }) {
             <div className="nav-section-links">
               {section.links.map(([to, label, icon]) => <a key={to} href={`#${to}`} className={currentPath === to ? "active" : ""} aria-current={currentPath === to ? "page" : undefined} onClick={() => setMenuOpen(false)}>
                 <span className="nav-icon" aria-hidden="true"><img src={icon} alt="" /></span><span>{label}</span>{to === "/alertas" && alertCount > 0 && <span className="nav-badge" aria-label={`${alertCount} alertas`}>{alertCount > 99 ? "99+" : alertCount}</span>}
+                {to === "/pedidos" && pendingCount > 0 && <span className="nav-badge" aria-label={`${pendingCount} pedidos por confirmar`}>{pendingCount > 99 ? "99+" : pendingCount}</span>}
               </a>)}
             </div>
           </section>)}
         </nav>
         <div className="session-box">
+          {error && <small role="status">{error}</small>}
           <span>Sesión iniciada</span>
           <small>{session?.user?.email}</small>
           <button type="button" onClick={signOut}><img src={logoutIcon} alt="" aria-hidden="true" />Cerrar sesión</button>
         </div>
       </aside>
-      <main className="admin-content">{children}</main>
+      <main className="admin-content"><OrderNotificationsContext.Provider value={{ soundEnabled, toggleSound }}>{children}</OrderNotificationsContext.Provider></main>
+      {toast && <div className="order-toast" role="status" aria-live="polite"><div><strong>Nuevo pedido</strong><p>{toast}</p><a href="#/pedidos" onClick={dismissToast}>Ver pedidos</a></div><button type="button" aria-label="Cerrar aviso" onClick={dismissToast}>×</button></div>}
     </div>
   );
 }

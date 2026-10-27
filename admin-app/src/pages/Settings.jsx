@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getSettings, saveSettings, uploadCategoryCover } from "../services/settingsService";
+import { useOrderNotificationSettings } from "../context/OrderNotificationsContext";
 
 const categories = [
   ["remeras", "Remeras"], ["abrigos", "Abrigos"], ["pantalones", "Pantalones"],
@@ -7,6 +8,7 @@ const categories = [
 ];
 
 export default function Settings() {
+  const { soundEnabled, toggleSound } = useOrderNotificationSettings();
   const [form, setForm] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -39,6 +41,7 @@ export default function Settings() {
   return <section>
     <div className="page-header"><div><p className="eyebrow">Administración</p><h1>Configuración</h1><p className="page-description">Datos públicos, canales de venta y reglas de entrega.</p></div></div>
     {notice && <div className="success-notice">{notice}</div>}{error && <p className="form-error">{error}</p>}
+    <section className="report-panel settings-section"><h2>Notificaciones de pedidos</h2><p>Activá el sonido para escuchar un aviso cuando llegue un pedido nuevo mientras el panel está abierto.</p><button className="button-secondary" type="button" aria-pressed={soundEnabled} onClick={toggleSound}>{soundEnabled ? "Silenciar pedidos" : "Activar sonido de pedidos"}</button></section>
     <form onSubmit={submit}>
       <section className="report-panel settings-section"><h2>Tienda y contacto</h2><div className="form-grid">
         <label className="field">Nombre<input value={form.store_name} onChange={(e) => setForm({...form, store_name:e.target.value})} required /></label>

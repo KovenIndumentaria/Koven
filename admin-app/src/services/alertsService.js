@@ -8,11 +8,6 @@ export async function getOperationalAlerts() {
   const data = await getAuditData();
   const alerts = [];
 
-  data.variants.filter((variant) => variant.is_active && variant.product?.is_active && variant.stock_current <= 3).forEach((variant) => {
-    const variantName = [variant.color_name, variant.size].filter(Boolean).join(" · ") || "Variante única";
-    alerts.push({ id: `stock-${variant.id}`, type: "stock", severity: variant.stock_current === 0 ? "critical" : "warning", title: variant.stock_current === 0 ? "Producto sin stock" : "Stock bajo", detail: `${variant.product?.name} · ${variantName}`, value: `${variant.stock_current} u.`, href: "#/stock" });
-  });
-
   data.orders.filter((order) => order.status !== "cancelled").forEach((order) => {
     const account = getOrderAccount(order);
     if (order.status === "pending_confirmation") alerts.push({ id: `order-${order.id}`, type: "orders", severity: "warning", title: "Pedido por confirmar", detail: `Pedido #${order.order_number} · ${order.customer_name}`, value: "Revisar", href: "#/pedidos" });

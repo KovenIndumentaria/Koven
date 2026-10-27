@@ -36,6 +36,10 @@ button { cursor: pointer; }
 .sidebar a:hover { color: var(--brand-white); background: #222; }
 .sidebar a.active { color: var(--brand-black); border-color: var(--brand-white); background: var(--brand-white); }
 .nav-badge { min-width: 24px; margin-left: auto; padding: 3px 6px; color: #fff; border-radius: 999px; background: #a72520; font-size: .65rem; font-weight: 700; text-align: center; }
+.order-toast { position: fixed; right: 20px; bottom: 20px; z-index: 1000; display: flex; gap: 20px; width: min(400px, calc(100vw - 40px)); padding: 20px; border: 1px solid #c9b776; border-radius: 12px; background: #fffdf5; color: #29271e; box-shadow: 0 8px 32px #0003; }
+.order-toast p { margin: 8px 0 12px; overflow-wrap: anywhere; }
+.order-toast a { color: #6b4812; font-weight: 700; text-decoration: underline; }
+.order-toast button { align-self: flex-start; margin-left: auto; border: 0; background: transparent; color: inherit; font-size: 24px; cursor: pointer; }
 .sidebar a.active .nav-badge { color: #fff; }
 .nav-icon { width: 20px; height: 20px; display: grid; place-items: center; flex: 0 0 20px; }
 .nav-icon img { width: 18px; height: 18px; object-fit: contain; filter: invert(79%) sepia(4%) saturate(14%) hue-rotate(314deg) brightness(87%); }
